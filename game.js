@@ -49,7 +49,8 @@ const ball = {
     speed: 5,              // Begin snelheid
     dx: 5,                 // Beweging in X richting
     dy: 3,                 // Beweging in Y richting
-    color: '#ffffff'       // Witte kleur
+    color: '#ffffff',      // Witte kleur
+    maxSpeed: 15           // Maximale snelheid om spel speelbaar te houden
 };
 
 // ==================== SCORE SYSTEEM ====================
@@ -261,8 +262,12 @@ function updateBall() {
         
         // Bal raakt speler 1 paddle
         ball.dx = Math.abs(ball.dx);  // Zorg dat bal naar rechts gaat
-        ball.dx *= 1.05;  // Verhoog snelheid met 5%
-        ball.dy *= 1.05;  // Verhoog snelheid met 5%
+        
+        // Verhoog snelheid alleen als onder de maximale snelheid
+        if (Math.abs(ball.dx) < ball.maxSpeed) {
+            ball.dx *= 1.05;  // Verhoog snelheid met 5%
+            ball.dy *= 1.05;  // Verhoog snelheid met 5%
+        }
         
         // Voeg spin toe gebaseerd op waar bal paddle raakt
         let hitPos = (ball.y - player1.y) / player1.height - 0.5;
@@ -283,8 +288,12 @@ function updateBall() {
         
         // Bal raakt speler 2 paddle
         ball.dx = -Math.abs(ball.dx);  // Zorg dat bal naar links gaat
-        ball.dx *= 1.05;  // Verhoog snelheid met 5%
-        ball.dy *= 1.05;  // Verhoog snelheid met 5%
+        
+        // Verhoog snelheid alleen als onder de maximale snelheid
+        if (Math.abs(ball.dx) < ball.maxSpeed) {
+            ball.dx *= 1.05;  // Verhoog snelheid met 5%
+            ball.dy *= 1.05;  // Verhoog snelheid met 5%
+        }
         
         // Voeg spin toe gebaseerd op waar bal paddle raakt
         let hitPos = (ball.y - player2.y) / player2.height - 0.5;
