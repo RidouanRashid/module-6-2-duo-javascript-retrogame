@@ -1,32 +1,32 @@
-var canvas = document.getElementById("game");
-var ctx = canvas.getContext("2d");
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
 
-var width = canvas.width;
-var height = canvas.height;
+const width = canvas.width;
+const height = canvas.height;
 
-var paddleWidth = 10;
-var paddleHeight = 80;
-var paddleSpeed = 6;
+const paddleWidth = 10;
+const paddleHeight = 80;
+const paddleSpeed = 6;
 
-var leftX = 20;
-var leftY = (height - paddleHeight) / 2;
+const leftX = 20;
+let leftY = (height - paddleHeight) / 2;
 
-var rightX = width - 20 - paddleWidth;
-var rightY = (height - paddleHeight) / 2;
+const rightX = width - 20 - paddleWidth;
+let rightY = (height - paddleHeight) / 2;
 
-var ballSize = 10;
-var ballX = width / 2;
-var ballY = height / 2;
-var ballSpeedX = 4;
-var ballSpeedY = 3;
+const ballSize = 10;
+let ballX = width / 2;
+let ballY = height / 2;
+let ballSpeedX = 4;
+let ballSpeedY = 3;
 
-var leftScore = 0;
-var rightScore = 0;
+let leftScore = 0;
+let rightScore = 0;
 
-var wDown = false;
-var sDown = false;
-var upDown = false;
-var downDown = false;
+let wDown = false;
+let sDown = false;
+let upDown = false;
+let downDown = false;
 
 function clamp(value, min, max) {
   if (value < min) return min;
@@ -139,7 +139,7 @@ function loop() {
 }
 
 function onKeyDown(e) {
-  var k = e.key;
+  const k = e.key;
   if (k === "w" || k === "W") wDown = true;
   if (k === "s" || k === "S") sDown = true;
   if (k === "ArrowUp") upDown = true;
@@ -147,7 +147,7 @@ function onKeyDown(e) {
 }
 
 function onKeyUp(e) {
-  var k = e.key;
+  const k = e.key;
   if (k === "w" || k === "W") wDown = false;
   if (k === "s" || k === "S") sDown = false;
   if (k === "ArrowUp") upDown = false;
