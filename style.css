@@ -1,0 +1,222 @@
+/* Reset en basis styling voor de hele pagina */
+* {
+    /* Verwijder standaard margins en padding van alle elementen */
+    margin: 0;
+    padding: 0;
+    /* Zorg dat borders en padding in de totale breedte/hoogte worden meegenomen */
+    box-sizing: border-box;
+}
+
+/* Styling voor de body (achtergrond en centrering) */
+body {
+    /* Donkere achtergrondkleur met gradient effect */
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    /* Lettertype familie */
+    font-family: 'Arial', sans-serif;
+    /* Tekstkleur wit voor contrast */
+    color: white;
+    /* Verberg scrollbars */
+    overflow: hidden;
+    /* Maak body minimaal 100% van het scherm hoog */
+    min-height: 100vh;
+    /* Gebruik flexbox voor centrering */
+    display: flex;
+    /* Centreer inhoud horizontaal */
+    justify-content: center;
+    /* Centreer inhoud verticaal */
+    align-items: center;
+}
+
+/* Container voor de hele game */
+.game-container {
+    /* Breedte van de container */
+    width: 90%;
+    /* Maximale breedte */
+    max-width: 900px;
+    /* Verticale centrering */
+    text-align: center;
+    /* Afgeronde hoeken */
+    border-radius: 20px;
+    /* Achtergrondkleur met transparantie */
+    background: rgba(0, 0, 0, 0.3);
+    /* Padding rondom de inhoud */
+    padding: 30px;
+    /* Schaduw effect voor diepte */
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* Styling voor de hoofdtitel */
+h1 {
+    /* Tekstgrootte */
+    font-size: 2.5rem;
+    /* Marge onder de titel */
+    margin-bottom: 20px;
+    /* Tekst schaduw voor glow effect */
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+    /* Animatie voor kleur verandering */
+    animation: titleGlow 2s ease-in-out infinite alternate;
+}
+
+/* Animatie definitie voor de titel glow */
+@keyframes titleGlow {
+    /* Begin kleur */
+    from {
+        color: #ffffff;
+        text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+    }
+    /* Eind kleur (licht blauw) */
+    to {
+        color: #00d4ff;
+        text-shadow: 0 0 30px rgba(0, 212, 255, 0.8);
+    }
+}
+
+/* Styling voor de instructies sectie */
+.instructions {
+    /* Achtergrondkleur met transparantie */
+    background: rgba(255, 255, 255, 0.1);
+    /* Padding binnen de box */
+    padding: 15px;
+    /* Afgeronde hoeken */
+    border-radius: 10px;
+    /* Marge onder de instructies */
+    margin-bottom: 20px;
+    /* Border met lichte kleur */
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Styling voor paragrafen binnen instructies */
+.instructions p {
+    /* Marge tussen paragrafen */
+    margin: 8px 0;
+    /* Tekstgrootte */
+    font-size: 1rem;
+}
+
+/* Container voor score weergave */
+.score-display {
+    /* Gebruik flexbox */
+    display: flex;
+    /* Verdeel ruimte gelijk tussen spelers */
+    justify-content: space-around;
+    /* Marge onder de scores */
+    margin-bottom: 20px;
+}
+
+/* Individuele speler score box */
+.player-score {
+    /* Achtergrondkleur met transparantie */
+    background: rgba(255, 255, 255, 0.15);
+    /* Padding binnen de box */
+    padding: 15px 30px;
+    /* Afgeronde hoeken */
+    border-radius: 15px;
+    /* Border met glow effect */
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    /* Animeer bij hover */
+    transition: all 0.3s ease;
+}
+
+/* Hover effect voor score boxes */
+.player-score:hover {
+    /* Versterk achtergrond bij hover */
+    background: rgba(255, 255, 255, 0.25);
+    /* Schaal iets groter */
+    transform: scale(1.05);
+}
+
+/* Label voor speler naam */
+.score-label {
+    /* Weergave als block voor nieuwe regel */
+    display: block;
+    /* Tekstgrootte */
+    font-size: 0.9rem;
+    /* Marge onder label */
+    margin-bottom: 5px;
+    /* Kleur lichter grijs */
+    color: #cccccc;
+}
+
+/* Score nummer styling */
+.score {
+    /* Weergave als block */
+    display: block;
+    /* Grote tekstgrootte */
+    font-size: 2rem;
+    /* Dikke letters */
+    font-weight: bold;
+    /* Gele kleur voor opvallendheid */
+    color: #ffd700;
+    /* Tekst schaduw voor diepte */
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+/* Styling voor het canvas element */
+#gameCanvas {
+    /* Border rondom canvas */
+    border: 4px solid rgba(255, 255, 255, 0.5);
+    /* Afgeronde hoeken */
+    border-radius: 10px;
+    /* Achtergrondkleur zwart */
+    background: #000000;
+    /* Weergave als block element */
+    display: block;
+    /* Centreer horizontaal met auto margins */
+    margin: 0 auto 20px auto;
+    /* Box shadow voor diepte effect */
+    box-shadow: 0 0 30px rgba(0, 212, 255, 0.3);
+    /* Cursor als pointer bij hover */
+    cursor: pointer;
+}
+
+/* Game bericht styling (start/einde berichten) */
+#game-message {
+    /* Tekstgrootte */
+    font-size: 1.5rem;
+    /* Dikke letters */
+    font-weight: bold;
+    /* Kleur licht blauw */
+    color: #00d4ff;
+    /* Marge boven het bericht */
+    margin-top: 10px;
+    /* Tekst schaduw */
+    text-shadow: 0 0 15px rgba(0, 212, 255, 0.7);
+    /* Animatie voor knipperen */
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Animatie voor het knipperen van berichten */
+@keyframes pulse {
+    /* Begin en eind: volledig zichtbaar */
+    0%, 100% {
+        opacity: 1;
+    }
+    /* Midden: half transparant */
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* Responsive design voor kleinere schermen */
+@media (max-width: 768px) {
+    /* Kleinere titel op mobiel */
+    h1 {
+        font-size: 1.8rem;
+    }
+    
+    /* Kleinere instructie tekst */
+    .instructions p {
+        font-size: 0.85rem;
+    }
+    
+    /* Stack score display verticaal op mobiel */
+    .score-display {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    /* Kleinere padding voor game container */
+    .game-container {
+        padding: 20px;
+    }
+}
