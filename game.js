@@ -1,3 +1,5 @@
+const resetBtn = document.querySelector('#resetBtn');
+const pauseBtn = document.querySelector('#pauseBtn');    
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
@@ -27,6 +29,9 @@ let wDown = false;
 let sDown = false;
 let upDown = false;
 let downDown = false;
+
+// Pause state
+let paused = false;
 
 function clamp(value, min, max) {
   if (value < min) return min;
@@ -115,10 +120,23 @@ function resetGame() {
     resetBall(1);
 }
 
-function pause() {
-    // This function can be implemented to pause the game
-    
+function togglePause() {
+  paused = !paused;
+  if (pauseBtn) {
+    pauseBtn.textContent = paused ? "Resume" : "Pause";
+  }
 }
+
+// function togglePause() {
+//     if (paused) {
+//         paused = false;
+//         pauseBtn.textContent = "Pause";
+//         nextTick();
+//     } else {
+//         paused = true;
+//         pauseBtn.textContent = "Resume";
+//     }
+// }
 
 // function clear() {
 //     ctx.clearRect(0,0,width,height):
@@ -143,6 +161,15 @@ function draw() {
   ctx.textAlign = "center";
   ctx.fillText(leftScore, width / 2 - 40, 30);
   ctx.fillText(rightScore, width / 2 + 40, 30);
+
+  if (paused) {
+    ctx.fillStyle = "rgba(0,0,0,0.4)";
+    ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = "#fff";
+    ctx.font = "28px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("Paused", width / 2, height / 2);
+  }
 }
 
 function update() {
@@ -151,7 +178,9 @@ function update() {
 }
 
 function loop() {
-  update();
+  if (!paused) {
+    update();
+  }
   draw();
   window.requestAnimationFrame(loop);
 }
