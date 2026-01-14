@@ -106,6 +106,24 @@ function resetBall(direction) {
   ballSpeedY = ballSpeedY > 0 ? 3 : -3;
 }
 
+function resetGame() {
+    ctx.clearRect(0, 0, width, height);
+    leftScore = 0;
+    rightScore = 0;
+    leftY = (height - paddleHeight) / 2;
+    rightY = (height - paddleHeight) / 2;
+    resetBall(1);
+}
+
+function pause() {
+    // This function can be implemented to pause the game
+    
+}
+
+// function clear() {
+//     ctx.clearRect(0,0,width,height):
+// }
+
 function draw() {
   ctx.clearRect(0, 0, width, height);
 
