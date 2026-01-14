@@ -17,8 +17,9 @@ const rightX = width - 20 - paddleWidth;
 let rightY = (height - paddleHeight) / 2;
 
 const ballSize = 10;
-let ballX = width / 2;
-let ballY = height / 2;
+// Ball spawns centered; initial serve will randomize vertical direction
+let ballX = width / 2 - ballSize / 2;
+let ballY = height / 2 - ballSize / 2;
 let ballSpeedX = 4;
 let ballSpeedY = 3;
 
@@ -29,8 +30,6 @@ let wDown = false;
 let sDown = false;
 let upDown = false;
 let downDown = false;
-
-// Pause state
 let paused = false;
 
 function clamp(value, min, max) {
@@ -108,7 +107,7 @@ function resetBall(direction) {
   } else {
     ballSpeedX = Math.abs(ballSpeedX);
   }
-  ballSpeedY = ballSpeedY > 0 ? 3 : -3;
+  ballSpeedY = Math.random() < 0.5 ? 3 : -3;
 }
 
 function resetGame() {
@@ -203,5 +202,8 @@ function onKeyUp(e) {
 
 window.addEventListener("keydown", onKeyDown);
 window.addEventListener("keyup", onKeyUp);
+
+// Serve once on load from center with random vertical direction
+resetBall(1);
 
 loop();
