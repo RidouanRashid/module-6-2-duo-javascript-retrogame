@@ -19,8 +19,13 @@ let rightY = (height - paddleHeight) / 2;
 const ballSize = 10;
 let ballX = width / 2 - ballSize / 2;
 let ballY = height / 2 - ballSize / 2;
-let ballSpeedX = 4;
-let ballSpeedY = 3;
+const initialBallSpeedX = 4;
+const initialBallSpeedY = 3;
+let ballSpeedX = initialBallSpeedX;
+let ballSpeedY = initialBallSpeedY;
+
+const speedIncreaseFactor = 1.06; 
+const maxBallSpeed = 12;
 
 let leftScore = 0;
 let rightScore = 0;
@@ -64,10 +69,12 @@ function moveBall() {
   if (ballY <= 0) {
     ballY = 0;
     ballSpeedY = -ballSpeedY;
+    increaseBallSpeed();
   }
   if (ballY + ballSize >= height) {
     ballY = height - ballSize;
     ballSpeedY = -ballSpeedY;
+    increaseBallSpeed();
   }
 
   if (
@@ -78,6 +85,10 @@ function moveBall() {
   ) {
     ballX = leftX + paddleWidth;
     ballSpeedX = -ballSpeedX;
+    // small vertical tweak depending on where it hits the paddle
+    const hitPos = (ballY + ballSize / 2) - (leftY + paddleHeight / 2);
+    ballSpeedY += (hitPos / (paddleHeight / 2)) * 1.5;
+    increaseBallSpeed();
   }
 
   if (
@@ -88,6 +99,9 @@ function moveBall() {
   ) {
     ballX = rightX - ballSize;
     ballSpeedX = -ballSpeedX;
+    const hitPosR = (ballY + ballSize / 2) - (rightY + paddleHeight / 2);
+    ballSpeedY += (hitPosR / (paddleHeight / 2)) * 1.5;
+    increaseBallSpeed();
   }
 
   if (ballX + ballSize < 0) {
@@ -114,11 +128,21 @@ function resetBall(direction) {
   ballX = width / 2 - ballSize / 2;
   ballY = height / 2 - ballSize / 2;
   if (direction < 0) {
-    ballSpeedX = -Math.abs(ballSpeedX);
+    ballSpeedX = -Math.abs(initialBallSpeedX);
   } else {
-    ballSpeedX = Math.abs(ballSpeedX);
+    ballSpeedX = Math.abs(initialBallSpeedX);
   }
-  ballSpeedY = Math.random() < 0.5 ? 3 : -3;
+  ballSpeedY = Math.random() < 0.5 ? initialBallSpeedY : -initialBallSpeedY;
+}
+
+function increaseBallSpeed() {
+  const sx = Math.sign(ballSpeedX) || 1;
+  const sy = Math.sign(ballSpeedY) || 1;
+  let ax = Math.min(Math.abs(ballSpeedX) * speedIncreaseFactor, maxBallSpeed);
+  let ay = Math.min(Math.abs(ballSpeedY) * speedIncreaseFactor, maxBallSpeed);
+  if (ay < 0.5) ay = 0.5;
+  ballSpeedX = ax * sx;
+  ballSpeedY = ay * sy;
 }
 
 function resetGame() {
@@ -150,7 +174,6 @@ function MaxscoreReached() {
 
 function handleGameOver(winner) {
   gameOver = true;
-  // Save winner to localStorage
   try { localStorage.setItem('pongWinner', winner); } catch (e) {}
 }
 
@@ -229,7 +252,6 @@ function onKeyUp(e) {
 window.addEventListener("keydown", onKeyDown);
 window.addEventListener("keyup", onKeyUp);
 
-// Serve once on load from center with random vertical direction
 resetBall(1);
 
 // Hook up buttons if present
