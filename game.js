@@ -131,7 +131,6 @@ if (ballSpeedX < 0 && ballX <= leftX + paddleWidth) {
   if (hitLeft1 || hitLeft2) {
     ballX = leftX + paddleWidth;
     ballSpeedX = -ballSpeedX;
-    // small vertical tweak depending on where it hits the paddle
     const hitPos = (ballY + ballSize / 2) - (leftY + paddleHeight / 2);
     ballSpeedY += (hitPos / (paddleHeight / 2)) * 1.5;
     increaseBallSpeed();
@@ -153,7 +152,6 @@ if (ballSpeedX < 0 && ballX <= leftX + paddleWidth) {
   }
 
   if (ballX + ballSize < 0) {
-    // right player scored
     if (rightScore < 10) rightScore = rightScore + 1;
     if (rightScore >= 10) {
       rightScore = 10;
@@ -162,7 +160,6 @@ if (ballSpeedX < 0 && ballX <= leftX + paddleWidth) {
     resetBall(1);
   }
   if (ballX > width) {
-    // left player scored
     if (leftScore < 10) leftScore = leftScore + 1;
     if (leftScore >= 10) {
       leftScore = 10;
@@ -199,13 +196,16 @@ function resetGame() {
     rightScore = 0;
     leftY = (height - paddleHeight) / 2;
     rightY = (height - paddleHeight) / 2;
+    leftY2 = (height - paddleHeight) / 2;
     resetBall(1);
   gameOver = false;
+  paused = false;
   if (pauseBtn) pauseBtn.textContent = "Pause";
   try { localStorage.removeItem('pongWinner'); } catch (e) {}
 }
 
 function togglePause() {
+  if (gameOver) return; 
   paused = !paused;
   if (pauseBtn) {
     pauseBtn.textContent = paused ? "Resume" : "Pause";
@@ -236,6 +236,9 @@ function draw() {
   ctx.fillRect(width / 2 - 1, 0, 2, height);
 
   ctx.fillRect(leftX, leftY, paddleWidth, paddleHeight);
+  if (gameMode === MODE_COOP_AI) {
+    ctx.fillRect(leftX, leftY2, paddleWidth, paddleHeight);
+  }
   ctx.fillRect(rightX, rightY, paddleWidth, paddleHeight);
 
   ctx.fillRect(ballX, ballY, ballSize, ballSize);
