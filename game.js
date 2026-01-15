@@ -17,11 +17,15 @@ const rightX = width - 20 - paddleWidth;
 let rightY = (height - paddleHeight) / 2;
 
 const ballSize = 10;
-// Ball spawns centered; initial serve will randomize vertical direction
 let ballX = width / 2 - ballSize / 2;
 let ballY = height / 2 - ballSize / 2;
-let ballSpeedX = 4;
-let ballSpeedY = 3;
+const initialBallSpeedX = 4;
+const initialBallSpeedY = 3;
+let ballSpeedX = initialBallSpeedX;
+let ballSpeedY = initialBallSpeedY;
+
+const speedIncreaseFactor = 1.06; 
+const maxBallSpeed = 12;
 
 let leftScore = 0;
 let rightScore = 0;
@@ -46,6 +50,8 @@ const aiError = 200;
 
 // Pause state
 let paused = false;
+let gameOver = false;
+
 
 function clamp(value, min, max) {
   if (value < min) return min;
@@ -105,10 +111,12 @@ function moveBall() {
   if (ballY <= 0) {
     ballY = 0;
     ballSpeedY = -ballSpeedY;
+    increaseBallSpeed();
   }
   if (ballY + ballSize >= height) {
     ballY = height - ballSize;
     ballSpeedY = -ballSpeedY;
+    increaseBallSpeed();
   }
 
 
@@ -123,6 +131,10 @@ if (ballSpeedX < 0 && ballX <= leftX + paddleWidth) {
   if (hitLeft1 || hitLeft2) {
     ballX = leftX + paddleWidth;
     ballSpeedX = -ballSpeedX;
+    // small vertical tweak depending on where it hits the paddle
+    const hitPos = (ballY + ballSize / 2) - (leftY + paddleHeight / 2);
+    ballSpeedY += (hitPos / (paddleHeight / 2)) * 1.5;
+    increaseBallSpeed();
   }
 }
 
@@ -135,14 +147,27 @@ if (ballSpeedX < 0 && ballX <= leftX + paddleWidth) {
   ) {
     ballX = rightX - ballSize;
     ballSpeedX = -ballSpeedX;
+    const hitPosR = (ballY + ballSize / 2) - (rightY + paddleHeight / 2);
+    ballSpeedY += (hitPosR / (paddleHeight / 2)) * 1.5;
+    increaseBallSpeed();
   }
 
   if (ballX + ballSize < 0) {
-    rightScore = rightScore + 1;
-    resetBall(1); 
+    // right player scored
+    if (rightScore < 10) rightScore = rightScore + 1;
+    if (rightScore >= 10) {
+      rightScore = 10;
+      handleGameOver('Right');
+    }
+    resetBall(1);
   }
   if (ballX > width) {
-    leftScore = leftScore + 1;
+    // left player scored
+    if (leftScore < 10) leftScore = leftScore + 1;
+    if (leftScore >= 10) {
+      leftScore = 10;
+      handleGameOver('Left');
+    }
     resetBall(-1);
   }
 }
@@ -151,11 +176,21 @@ function resetBall(direction) {
   ballX = width / 2 - ballSize / 2;
   ballY = height / 2 - ballSize / 2;
   if (direction < 0) {
-    ballSpeedX = -Math.abs(ballSpeedX);
+    ballSpeedX = -Math.abs(initialBallSpeedX);
   } else {
-    ballSpeedX = Math.abs(ballSpeedX);
+    ballSpeedX = Math.abs(initialBallSpeedX);
   }
-  ballSpeedY = Math.random() < 0.5 ? 3 : -3;
+  ballSpeedY = Math.random() < 0.5 ? initialBallSpeedY : -initialBallSpeedY;
+}
+
+function increaseBallSpeed() {
+  const sx = Math.sign(ballSpeedX) || 1;
+  const sy = Math.sign(ballSpeedY) || 1;
+  let ax = Math.min(Math.abs(ballSpeedX) * speedIncreaseFactor, maxBallSpeed);
+  let ay = Math.min(Math.abs(ballSpeedY) * speedIncreaseFactor, maxBallSpeed);
+  if (ay < 0.5) ay = 0.5;
+  ballSpeedX = ax * sx;
+  ballSpeedY = ay * sy;
 }
 
 function resetGame() {
@@ -165,6 +200,9 @@ function resetGame() {
     leftY = (height - paddleHeight) / 2;
     rightY = (height - paddleHeight) / 2;
     resetBall(1);
+  gameOver = false;
+  if (pauseBtn) pauseBtn.textContent = "Pause";
+  try { localStorage.removeItem('pongWinner'); } catch (e) {}
 }
 
 function togglePause() {
@@ -174,20 +212,18 @@ function togglePause() {
   }
 }
 
-// function togglePause() {
-//     if (paused) {
-//         paused = false;
-//         pauseBtn.textContent = "Pause";
-//         nextTick();
-//     } else {
-//         paused = true;
-//         pauseBtn.textContent = "Resume";
-//     }
-// }
+function MaxscoreReached() {
+    if (leftScore >= 10 || rightScore >= 10) {
+        gameOver = true;
+        return true;
+    }
+    return false;
+}
 
-// function clear() {
-//     ctx.clearRect(0,0,width,height):
-// }
+function handleGameOver(winner) {
+  gameOver = true;
+  try { localStorage.setItem('pongWinner', winner); } catch (e) {}
+}
 
 function draw() {
   ctx.clearRect(0, 0, width, height);
@@ -218,25 +254,21 @@ function draw() {
     ctx.fillText("Paused", width / 2, height / 2);
   }
 
-ctx.fillRect(leftX, leftY, paddleWidth, paddleHeight);
-
-if (gameMode === MODE_COOP_AI) {
-  ctx.fillRect(leftX, leftY2, paddleWidth, paddleHeight);
-}
-
-ctx.fillRect(rightX, rightY, paddleWidth, paddleHeight);
-
-ctx.font = "14px Arial";
-ctx.fillText(
-  gameMode === MODE_CLASSIC ? "Mode: Classic (M to switch)" : "Mode: Co-op vs AI (M to switch)",
-  width / 2,
-  height - 15
-);
-
-
+  if (gameOver) {
+    ctx.fillStyle = "rgba(0,0,0,0.6)";
+    ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = "#fff";
+    ctx.font = "28px Arial";
+    ctx.textAlign = "center";
+    const winner = leftScore >= 10 ? 'Left Player' : 'Right Player';
+    ctx.fillText(`Game Over - ${winner} Wins!`, width / 2, height / 2 - 10);
+    ctx.font = "18px Arial";
+    ctx.fillText('Press Reset to play again', width / 2, height / 2 + 20);
+  }
 }
 
 function update() {
+  if (gameOver) return;
   handleInput();
   moveBall();
 }
@@ -268,7 +300,10 @@ function onKeyUp(e) {
 window.addEventListener("keydown", onKeyDown);
 window.addEventListener("keyup", onKeyUp);
 
-// Serve once on load from center with random vertical direction
 resetBall(1);
+
+// Hook up buttons if present
+if (resetBtn) resetBtn.addEventListener('click', resetGame);
+if (pauseBtn) pauseBtn.addEventListener('click', togglePause);
 
 loop();
