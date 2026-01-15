@@ -34,6 +34,21 @@ let wDown = false;
 let sDown = false;
 let upDown = false;
 let downDown = false;
+
+// --- GAME MODES ---
+const MODE_CLASSIC = "classic";   
+const MODE_COOP_AI = "coop_ai";   
+let gameMode = MODE_CLASSIC;    
+
+
+let leftY2 = (height - paddleHeight) / 2 + 60;
+
+
+const aiSpeed = 5;
+const aiError = 200; 
+
+
+// Pause state
 let paused = false;
 let gameOver = false;
 
@@ -44,23 +59,50 @@ function clamp(value, min, max) {
   return value;
 }
 
+function setMode(mode) {
+  gameMode = mode;
+  resetGame();
+}
+
+window.addEventListener("keydown", (e) => {
+  if (e.key === "m" || e.key === "M") {
+    setMode(gameMode === MODE_CLASSIC ? MODE_COOP_AI : MODE_CLASSIC);
+  }
+});
+
+
 function handleInput() {
-  if (wDown) {
-    leftY = leftY - paddleSpeed;
-  }
-  if (sDown) {
-    leftY = leftY + paddleSpeed;
-  }
-  if (upDown) {
-    rightY = rightY - paddleSpeed;
-  }
-  if (downDown) {
-    rightY = rightY + paddleSpeed;
+  if (gameMode === MODE_CLASSIC) {
+    
+    if (wDown) leftY -= paddleSpeed;
+    if (sDown) leftY += paddleSpeed;
+    if (upDown) rightY -= paddleSpeed;
+    if (downDown) rightY += paddleSpeed;
+
+    leftY = clamp(leftY, 0, height - paddleHeight);
+    rightY = clamp(rightY, 0, height - paddleHeight);
+    return;
   }
 
-  leftY = clamp(leftY, 0, height - paddleHeight);
-  rightY = clamp(rightY, 0, height - paddleHeight);
+  if (gameMode === MODE_COOP_AI) {
+    if (wDown) leftY -= paddleSpeed;
+    if (sDown) leftY += paddleSpeed;
+
+    
+    if (upDown) leftY2 -= paddleSpeed;
+    if (downDown) leftY2 += paddleSpeed;
+
+    leftY = clamp(leftY, 0, height - paddleHeight);
+    leftY2 = clamp(leftY2, 0, height - paddleHeight);
+
+    
+    const aiTarget = ballY - paddleHeight / 2 + (Math.random() * 2 - 1) * aiError;
+    if (aiTarget > rightY) rightY += aiSpeed;
+    else if (aiTarget < rightY) rightY -= aiSpeed;
+    rightY = clamp(rightY, 0, height - paddleHeight);
+  }
 }
+
 
 function moveBall() {
   ballX = ballX + ballSpeedX;
@@ -77,12 +119,16 @@ function moveBall() {
     increaseBallSpeed();
   }
 
-  if (
-    ballX <= leftX + paddleWidth &&
-    ballY + ballSize >= leftY &&
-    ballY <= leftY + paddleHeight &&
-    ballSpeedX < 0
-  ) {
+
+if (ballSpeedX < 0 && ballX <= leftX + paddleWidth) {
+  const hitLeft1 =
+    ballY + ballSize >= leftY && ballY <= leftY + paddleHeight;
+
+  const hitLeft2 =
+    (gameMode === MODE_COOP_AI) &&
+    (ballY + ballSize >= leftY2 && ballY <= leftY2 + paddleHeight);
+
+  if (hitLeft1 || hitLeft2) {
     ballX = leftX + paddleWidth;
     ballSpeedX = -ballSpeedX;
     // small vertical tweak depending on where it hits the paddle
@@ -90,6 +136,8 @@ function moveBall() {
     ballSpeedY += (hitPos / (paddleHeight / 2)) * 1.5;
     increaseBallSpeed();
   }
+}
+
 
   if (
     ballX + ballSize >= rightX &&
