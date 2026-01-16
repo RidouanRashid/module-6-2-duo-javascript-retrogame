@@ -17,28 +17,39 @@ const rightX = width - 20 - paddleWidth;
 let rightY = (height - paddleHeight) / 2;
 
 const ballSize = 10;
-let ballX = width / 2 - ballSize / 2;
-let ballY = height / 2 - ballSize / 2;
-const initialBallSpeedX = 4;
-const initialBallSpeedY = 3;
-let ballSpeedX = initialBallSpeedX;
-let ballSpeedY = initialBallSpeedY;
+const initialBallSpeedX = 2;
+const initialBallSpeedY = 1.5;
 
-const speedIncreaseFactor = 1.06; 
+let balls = [];
+
+function makeBall(direction) {
+  const sx = direction < 0 ? -Math.abs(initialBallSpeedX) : Math.abs(initialBallSpeedX);
+  const sy = Math.random() < 0.5 ? initialBallSpeedY : -initialBallSpeedY;
+  return { x: width / 2 - ballSize / 2, y: height / 2 - ballSize / 2, sx: sx, sy: sy, size: ballSize };
+}
+
+const speedIncreaseFactor = 1.02; 
 const maxBallSpeed = 12;
 
 let leftScore = 0;
 let rightScore = 0;
+const timeLimitSeconds = 60; 
+let remainingSeconds = timeLimitSeconds;
+let timerInterval = null;
 
 let wDown = false;
 let sDown = false;
 let upDown = false;
 let downDown = false;
 
+const modeEl = document.getElementById('modeText');
+
 // --- GAME MODES ---
 const MODE_CLASSIC = "classic";   
 const MODE_COOP_AI = "coop_ai";   
+const MODE_MULTI = "multi";
 let gameMode = MODE_CLASSIC;    
+const MODE_ORDER = [MODE_CLASSIC, MODE_COOP_AI, MODE_MULTI];
 
 
 let leftY2 = (height - paddleHeight) / 2 + 60;
@@ -48,7 +59,6 @@ const aiSpeed = 5;
 const aiError = 200; 
 
 
-// Pause state
 let paused = false;
 let gameOver = false;
 
@@ -60,20 +70,36 @@ function clamp(value, min, max) {
 }
 
 function setMode(mode) {
+  if (!MODE_ORDER.includes(mode)) return;
   gameMode = mode;
   resetGame();
 }
 
+function updateModeText() {
+  if (!modeEl) return;
+  let text = 'Mode: Classic';
+  if (gameMode === MODE_COOP_AI) text = 'Mode: Coop AI';
+  if (gameMode === MODE_MULTI) text = 'Mode: Multi-ball';
+  text += ' — Press M for next mode, N for previous mode';
+  modeEl.textContent = text;
+}
+
 window.addEventListener("keydown", (e) => {
-  if (e.key === "m" || e.key === "M") {
-    setMode(gameMode === MODE_CLASSIC ? MODE_COOP_AI : MODE_CLASSIC);
+  const k = e.key && e.key.toLowerCase();
+  if (k === 'm') {
+    const idx = MODE_ORDER.indexOf(gameMode);
+    const next = MODE_ORDER[(idx + 1) % MODE_ORDER.length];
+    setMode(next);
+  } else if (k === 'n') {
+    const idx = MODE_ORDER.indexOf(gameMode);
+    const prev = MODE_ORDER[(idx - 1 + MODE_ORDER.length) % MODE_ORDER.length];
+    setMode(prev);
   }
 });
 
 
 function handleInput() {
-  if (gameMode === MODE_CLASSIC) {
-    
+  if (gameMode === MODE_CLASSIC || gameMode === MODE_MULTI) {
     if (wDown) leftY -= paddleSpeed;
     if (sDown) leftY += paddleSpeed;
     if (upDown) rightY -= paddleSpeed;
@@ -96,7 +122,8 @@ function handleInput() {
     leftY2 = clamp(leftY2, 0, height - paddleHeight);
 
     
-    const aiTarget = ballY - paddleHeight / 2 + (Math.random() * 2 - 1) * aiError;
+    const targetBallY = (balls.length > 0) ? balls[0].y : (typeof ballY !== 'undefined' ? ballY : height/2);
+    const aiTarget = targetBallY - paddleHeight / 2 + (Math.random() * 2 - 1) * aiError;
     if (aiTarget > rightY) rightY += aiSpeed;
     else if (aiTarget < rightY) rightY -= aiSpeed;
     rightY = clamp(rightY, 0, height - paddleHeight);
@@ -105,89 +132,67 @@ function handleInput() {
 
 
 function moveBall() {
-  ballX = ballX + ballSpeedX;
-  ballY = ballY + ballSpeedY;
+  for (let i = 0; i < balls.length; i++) {
+    const b = balls[i];
+    b.x += b.sx;
+    b.y += b.sy;
 
-  if (ballY <= 0) {
-    ballY = 0;
-    ballSpeedY = -ballSpeedY;
-    increaseBallSpeed();
-  }
-  if (ballY + ballSize >= height) {
-    ballY = height - ballSize;
-    ballSpeedY = -ballSpeedY;
-    increaseBallSpeed();
-  }
-
-
-if (ballSpeedX < 0 && ballX <= leftX + paddleWidth) {
-  const hitLeft1 =
-    ballY + ballSize >= leftY && ballY <= leftY + paddleHeight;
-
-  const hitLeft2 =
-    (gameMode === MODE_COOP_AI) &&
-    (ballY + ballSize >= leftY2 && ballY <= leftY2 + paddleHeight);
-
-  if (hitLeft1 || hitLeft2) {
-    ballX = leftX + paddleWidth;
-    ballSpeedX = -ballSpeedX;
-    const hitPos = (ballY + ballSize / 2) - (leftY + paddleHeight / 2);
-    ballSpeedY += (hitPos / (paddleHeight / 2)) * 1.5;
-    increaseBallSpeed();
-  }
-}
-
-
-  if (
-    ballX + ballSize >= rightX &&
-    ballY + ballSize >= rightY &&
-    ballY <= rightY + paddleHeight &&
-    ballSpeedX > 0
-  ) {
-    ballX = rightX - ballSize;
-    ballSpeedX = -ballSpeedX;
-    const hitPosR = (ballY + ballSize / 2) - (rightY + paddleHeight / 2);
-    ballSpeedY += (hitPosR / (paddleHeight / 2)) * 1.5;
-    increaseBallSpeed();
-  }
-
-  if (ballX + ballSize < 0) {
-    if (rightScore < 10) rightScore = rightScore + 1;
-    if (rightScore >= 10) {
-      rightScore = 10;
-      handleGameOver('Right');
+    if (b.y <= 0) {
+      b.y = 0;
+      b.sy = -b.sy;
+      increaseBallSpeed(b);
     }
-    resetBall(1);
-  }
-  if (ballX > width) {
-    if (leftScore < 10) leftScore = leftScore + 1;
-    if (leftScore >= 10) {
-      leftScore = 10;
-      handleGameOver('Left');
+    if (b.y + b.size >= height) {
+      b.y = height - b.size;
+      b.sy = -b.sy;
+      increaseBallSpeed(b);
     }
-    resetBall(-1);
+
+    if (b.sx < 0 && b.x <= leftX + paddleWidth) {
+      const hitLeft1 = b.y + b.size >= leftY && b.y <= leftY + paddleHeight;
+      const hitLeft2 = (gameMode === MODE_COOP_AI) && (b.y + b.size >= leftY2 && b.y <= leftY2 + paddleHeight);
+      if (hitLeft1 || hitLeft2) {
+        b.x = leftX + paddleWidth;
+        b.sx = -b.sx;
+        const hitPos = (b.y + b.size / 2) - (leftY + paddleHeight / 2);
+        b.sy += (hitPos / (paddleHeight / 2)) * 1.5;
+        increaseBallSpeed(b);
+      }
+    }
+
+    if (b.x + b.size >= rightX && b.y + b.size >= rightY && b.y <= rightY + paddleHeight && b.sx > 0) {
+      b.x = rightX - b.size;
+      b.sx = -b.sx;
+      const hitPosR = (b.y + b.size / 2) - (rightY + paddleHeight / 2);
+      b.sy += (hitPosR / (paddleHeight / 2)) * 1.5;
+      increaseBallSpeed(b);
+    }
+
+    if (b.x + b.size < 0) {
+      if (rightScore < 10) rightScore += 1;
+      if (rightScore >= 10) { rightScore = 10; handleGameOver('Right'); }
+      balls[i] = makeBall(1);
+    }
+    if (b.x > width) {
+      if (leftScore < 10) leftScore += 1;
+      if (leftScore >= 10) { leftScore = 10; handleGameOver('Left'); }
+      balls[i] = makeBall(-1);
+    }
   }
 }
 
 function resetBall(direction) {
-  ballX = width / 2 - ballSize / 2;
-  ballY = height / 2 - ballSize / 2;
-  if (direction < 0) {
-    ballSpeedX = -Math.abs(initialBallSpeedX);
-  } else {
-    ballSpeedX = Math.abs(initialBallSpeedX);
-  }
-  ballSpeedY = Math.random() < 0.5 ? initialBallSpeedY : -initialBallSpeedY;
+  balls = [ makeBall(direction) ];
 }
 
-function increaseBallSpeed() {
-  const sx = Math.sign(ballSpeedX) || 1;
-  const sy = Math.sign(ballSpeedY) || 1;
-  let ax = Math.min(Math.abs(ballSpeedX) * speedIncreaseFactor, maxBallSpeed);
-  let ay = Math.min(Math.abs(ballSpeedY) * speedIncreaseFactor, maxBallSpeed);
+function increaseBallSpeed(ball) {
+  const sx = Math.sign(ball.sx) || 1;
+  const sy = Math.sign(ball.sy) || 1;
+  let ax = Math.min(Math.abs(ball.sx) * speedIncreaseFactor, maxBallSpeed);
+  let ay = Math.min(Math.abs(ball.sy) * speedIncreaseFactor, maxBallSpeed);
   if (ay < 0.5) ay = 0.5;
-  ballSpeedX = ax * sx;
-  ballSpeedY = ay * sy;
+  ball.sx = ax * sx;
+  ball.sy = ay * sy;
 }
 
 function resetGame() {
@@ -197,7 +202,14 @@ function resetGame() {
     leftY = (height - paddleHeight) / 2;
     rightY = (height - paddleHeight) / 2;
     leftY2 = (height - paddleHeight) / 2;
-    resetBall(1);
+    if (gameMode === MODE_MULTI) {
+      balls = [ makeBall(1), makeBall(-1), makeBall(1) ];
+      balls[1].y += 30; balls[2].y -= 30;
+    } else {
+      balls = [ makeBall(1) ];
+    }
+    updateModeText();
+    startTimer();
   gameOver = false;
   paused = false;
   if (pauseBtn) pauseBtn.textContent = "Pause";
@@ -210,6 +222,22 @@ function togglePause() {
   if (pauseBtn) {
     pauseBtn.textContent = paused ? "Resume" : "Pause";
   }
+}
+
+function startTimer() {
+  if (timerInterval) clearInterval(timerInterval);
+  remainingSeconds = timeLimitSeconds;
+  timerInterval = setInterval(() => {
+    if (!paused && !gameOver) {
+      remainingSeconds -= 1;
+      if (remainingSeconds <= 0) {
+        remainingSeconds = 0;
+        clearInterval(timerInterval);
+        gameOver = true;
+        handleGameOver('Time');
+      }
+    }
+  }, 1000);
 }
 
 function MaxscoreReached() {
@@ -241,12 +269,19 @@ function draw() {
   }
   ctx.fillRect(rightX, rightY, paddleWidth, paddleHeight);
 
-  ctx.fillRect(ballX, ballY, ballSize, ballSize);
+  for (const b of balls) {
+    ctx.fillRect(b.x, b.y, b.size, b.size);
+  }
 
   ctx.font = "20px Arial";
   ctx.textAlign = "center";
   ctx.fillText(leftScore, width / 2 - 40, 30);
   ctx.fillText(rightScore, width / 2 + 40, 30);
+
+  
+  ctx.textAlign = "right";
+  ctx.fillText(`Time: ${remainingSeconds}s`, width - 10, 30);
+  ctx.textAlign = "center";
 
   if (paused) {
     ctx.fillStyle = "rgba(0,0,0,0.4)";
@@ -263,8 +298,10 @@ function draw() {
     ctx.fillStyle = "#fff";
     ctx.font = "28px Arial";
     ctx.textAlign = "center";
-    const winner = leftScore >= 10 ? 'Left Player' : 'Right Player';
-    ctx.fillText(`Game Over - ${winner} Wins!`, width / 2, height / 2 - 10);
+    let winnerText = '';
+    if (leftScore === rightScore) winnerText = 'Draw!';
+    else winnerText = leftScore > rightScore ? 'Left Player Wins!' : 'Right Player Wins!';
+    ctx.fillText(`Game Over - ${winnerText}`, width / 2, height / 2 - 10);
     ctx.font = "18px Arial";
     ctx.fillText('Press Reset to play again', width / 2, height / 2 + 20);
   }
@@ -300,12 +337,12 @@ function onKeyUp(e) {
   if (k === "ArrowDown") downDown = false;
 }
 
+
 window.addEventListener("keydown", onKeyDown);
 window.addEventListener("keyup", onKeyUp);
 
-resetBall(1);
+resetGame();
 
-// Hook up buttons if present
 if (resetBtn) resetBtn.addEventListener('click', resetGame);
 if (pauseBtn) pauseBtn.addEventListener('click', togglePause);
 
