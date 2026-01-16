@@ -305,7 +305,6 @@ window.addEventListener("keyup", onKeyUp);
 
 resetBall(1);
 
-// Hook up buttons if present
 if (resetBtn) resetBtn.addEventListener('click', resetGame);
 if (pauseBtn) pauseBtn.addEventListener('click', togglePause);
 
