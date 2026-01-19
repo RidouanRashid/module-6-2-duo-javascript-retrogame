@@ -44,8 +44,8 @@ let gameMode = MODE_CLASSIC;
 let leftY2 = (height - paddleHeight) / 2 + 60;
 
 
-const aiSpeed = 5;
-const aiError = 200; 
+const aiSpeed = 10;
+const aiError = 5; 
 
 
 // Pause state
