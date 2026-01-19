@@ -44,6 +44,15 @@ let downDown = false;
 
 const modeEl = document.getElementById('modeText');
 
+// --- BACKGROUND COLORS ---
+const backgroundColors = {
+  dark: '#222',
+  blue: '#001a4d',
+  green: '#001a00',
+  red: '#4d0000'
+};
+let currentBackground = backgroundColors.dark;
+
 // --- GAME MODES ---
 const MODE_CLASSIC = "classic";   
 const MODE_COOP_AI = "coop_ai";   
@@ -203,7 +212,7 @@ function resetGame() {
     rightY = (height - paddleHeight) / 2;
     leftY2 = (height - paddleHeight) / 2;
     if (gameMode === MODE_MULTI) {
-      balls = [ makeBall(1), makeBall(-1), makeBall(1) ];
+      balls = [ makeBall(1), makeBall(-1) ];
       balls[1].y += 30; balls[2].y -= 30;
     } else {
       balls = [ makeBall(1) ];
@@ -256,7 +265,7 @@ function handleGameOver(winner) {
 function draw() {
   ctx.clearRect(0, 0, width, height);
 
-  ctx.fillStyle = "#222";
+  ctx.fillStyle = currentBackground;
   ctx.fillRect(0, 0, width, height);
 
   ctx.fillStyle = "#fff";
@@ -345,5 +354,16 @@ resetGame();
 
 if (resetBtn) resetBtn.addEventListener('click', resetGame);
 if (pauseBtn) pauseBtn.addEventListener('click', togglePause);
+
+// Background color buttons
+const bgBtn1 = document.getElementById('bgBtn1');
+const bgBtn2 = document.getElementById('bgBtn2');
+const bgBtn3 = document.getElementById('bgBtn3');
+const bgBtn4 = document.getElementById('bgBtn4');
+
+if (bgBtn1) bgBtn1.addEventListener('click', () => { currentBackground = backgroundColors.dark; });
+if (bgBtn2) bgBtn2.addEventListener('click', () => { currentBackground = backgroundColors.blue; });
+if (bgBtn3) bgBtn3.addEventListener('click', () => { currentBackground = backgroundColors.green; });
+if (bgBtn4) bgBtn4.addEventListener('click', () => { currentBackground = backgroundColors.red; });
 
 loop();
