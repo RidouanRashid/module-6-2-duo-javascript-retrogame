@@ -44,7 +44,6 @@ let downDown = false;
 
 const modeEl = document.getElementById('modeText');
 
-// --- BACKGROUND COLORS ---
 const backgroundColors = {
   dark: '#222',
   blue: '#001a4d',
@@ -53,7 +52,7 @@ const backgroundColors = {
 };
 let currentBackground = backgroundColors.dark;
 
-// --- GAME MODES ---
+
 const MODE_CLASSIC = "classic";   
 const MODE_COOP_AI = "coop_ai";   
 const MODE_MULTI = "multi";
@@ -64,8 +63,8 @@ const MODE_ORDER = [MODE_CLASSIC, MODE_COOP_AI, MODE_MULTI];
 let leftY2 = (height - paddleHeight) / 2 + 60;
 
 
-const aiSpeed = 10;
-const aiError = 5; 
+const aiSpeed = 200;
+const aiError = 1; 
 
 
 let paused = false;
