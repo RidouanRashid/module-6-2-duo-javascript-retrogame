@@ -16,11 +16,50 @@ let leftY = (height - paddleHeight) / 2;
 const rightX = width - 20 - paddleWidth;
 let rightY = (height - paddleHeight) / 2;
 
-const ballSize = 10;
+const ballSize = 16;
 const initialBallSpeedX = 2;
 const initialBallSpeedY = 1.5;
 
 let balls = [];
+
+let totalBounces = 0;
+let splitStage = 0;
+let nextThreshold = 3; 
+let nextMultiplier = 2; 
+const MAX_TOTAL_BALLS = 6;
+
+function resetSplitState() {
+  totalBounces = 0;
+  nextThreshold = 2; 
+}
+
+function splitBallsToCount(targetCount) {
+  if (balls.length >= targetCount) return;
+  const current = balls.slice();
+  const newBalls = current.slice();
+  let idx = 0;
+  while (newBalls.length < targetCount && newBalls.length < MAX_TOTAL_BALLS) {
+    const src = current[idx % current.length];
+    const speed = Math.max(1, Math.hypot(src.sx, src.sy));
+    const baseAngle = Math.atan2(src.sy, src.sx);
+    const spread = (newBalls.length - current.length / 2) * 0.35 + (Math.random() * 0.4 - 0.2);
+    const angle = baseAngle + spread;
+    const sx = Math.cos(angle) * speed;
+    const sy = Math.sin(angle) * speed;
+    newBalls.push({ x: src.x, y: src.y, sx: sx, sy: sy, size: src.size });
+    idx++;
+  }
+  balls = newBalls.slice(0, Math.min(targetCount, MAX_TOTAL_BALLS));
+}
+
+function checkSplit() {
+  if (gameMode !== MODE_MULTI) return;
+  if (totalBounces >= nextThreshold && balls.length < MAX_TOTAL_BALLS) {
+    const target = Math.min(balls.length + 1, MAX_TOTAL_BALLS);
+    splitBallsToCount(target);
+    nextThreshold *= 2; 
+  }
+}
 
 function makeBall(direction) {
   const sx = direction < 0 ? -Math.abs(initialBallSpeedX) : Math.abs(initialBallSpeedX);
@@ -33,7 +72,7 @@ const maxBallSpeed = 12;
 
 let leftScore = 0;
 let rightScore = 0;
-const timeLimitSeconds = 60; 
+const timeLimitSeconds = 120; 
 let remainingSeconds = timeLimitSeconds;
 let timerInterval = null;
 
@@ -44,7 +83,6 @@ let downDown = false;
 
 const modeEl = document.getElementById('modeText');
 
-// --- BACKGROUND COLORS ---
 const backgroundColors = {
   dark: '#222',
   blue: '#001a4d',
@@ -52,8 +90,24 @@ const backgroundColors = {
   red: '#4d0000'
 };
 let currentBackground = backgroundColors.dark;
+let currentBackgroundImage = null;
+let useBackgroundImage = false;
 
-// --- GAME MODES ---
+
+const bgImage = new Image();
+bgImage.src = 'img/kerst.png';
+bgImage.onload = () => {
+  console.log('Background image loaded successfully');
+};
+
+
+const ballImage = new Image();
+ballImage.src = 'img/kerstbal.png';
+ballImage.onload = () => {
+  console.log('Ball image loaded successfully');
+};
+
+
 const MODE_CLASSIC = "classic";   
 const MODE_COOP_AI = "coop_ai";   
 const MODE_MULTI = "multi";
@@ -64,8 +118,8 @@ const MODE_ORDER = [MODE_CLASSIC, MODE_COOP_AI, MODE_MULTI];
 let leftY2 = (height - paddleHeight) / 2 + 60;
 
 
-const aiSpeed = 10;
-const aiError = 5; 
+const aiSpeed = 5;
+const aiError = 20; 
 
 
 let paused = false;
@@ -166,6 +220,8 @@ function moveBall() {
         const hitPos = (b.y + b.size / 2) - (leftY + paddleHeight / 2);
         b.sy += (hitPos / (paddleHeight / 2)) * 1.5;
         increaseBallSpeed(b);
+        totalBounces++;
+        checkSplit();
       }
     }
 
@@ -175,17 +231,23 @@ function moveBall() {
       const hitPosR = (b.y + b.size / 2) - (rightY + paddleHeight / 2);
       b.sy += (hitPosR / (paddleHeight / 2)) * 1.5;
       increaseBallSpeed(b);
+      totalBounces++;
+      checkSplit();
     }
 
     if (b.x + b.size < 0) {
       if (rightScore < 10) rightScore += 1;
       if (rightScore >= 10) { rightScore = 10; handleGameOver('Right'); }
-      balls[i] = makeBall(1);
+      resetBall(1);
+      resetSplitState();
+      break;
     }
     if (b.x > width) {
       if (leftScore < 10) leftScore += 1;
       if (leftScore >= 10) { leftScore = 10; handleGameOver('Left'); }
-      balls[i] = makeBall(-1);
+      resetBall(-1);
+      resetSplitState();
+      break;
     }
   }
 }
@@ -212,8 +274,8 @@ function resetGame() {
     rightY = (height - paddleHeight) / 2;
     leftY2 = (height - paddleHeight) / 2;
     if (gameMode === MODE_MULTI) {
-      balls = [ makeBall(1), makeBall(-1) ];
-      balls[1].y += 30; balls[2].y -= 30;
+      balls = [ makeBall(1) ];
+      resetSplitState();
     } else {
       balls = [ makeBall(1) ];
     }
@@ -265,8 +327,13 @@ function handleGameOver(winner) {
 function draw() {
   ctx.clearRect(0, 0, width, height);
 
-  ctx.fillStyle = currentBackground;
-  ctx.fillRect(0, 0, width, height);
+  // Draw background
+  if (useBackgroundImage && bgImage.complete) {
+    ctx.drawImage(bgImage, 0, 0, width, height);
+  } else {
+    ctx.fillStyle = currentBackground;
+    ctx.fillRect(0, 0, width, height);
+  }
 
   ctx.fillStyle = "#fff";
 
@@ -278,8 +345,13 @@ function draw() {
   }
   ctx.fillRect(rightX, rightY, paddleWidth, paddleHeight);
 
+  // Draw balls
   for (const b of balls) {
-    ctx.fillRect(b.x, b.y, b.size, b.size);
+    if (useBackgroundImage && ballImage.complete) {
+      ctx.drawImage(ballImage, b.x, b.y, b.size, b.size);
+    } else {
+      ctx.fillRect(b.x, b.y, b.size, b.size);
+    }
   }
 
   ctx.font = "20px Arial";
@@ -360,10 +432,12 @@ const bgBtn1 = document.getElementById('bgBtn1');
 const bgBtn2 = document.getElementById('bgBtn2');
 const bgBtn3 = document.getElementById('bgBtn3');
 const bgBtn4 = document.getElementById('bgBtn4');
+const bgBtnImg = document.getElementById('bgBtnImg');
 
-if (bgBtn1) bgBtn1.addEventListener('click', () => { currentBackground = backgroundColors.dark; });
-if (bgBtn2) bgBtn2.addEventListener('click', () => { currentBackground = backgroundColors.blue; });
-if (bgBtn3) bgBtn3.addEventListener('click', () => { currentBackground = backgroundColors.green; });
-if (bgBtn4) bgBtn4.addEventListener('click', () => { currentBackground = backgroundColors.red; });
+if (bgBtn1) bgBtn1.addEventListener('click', () => { currentBackground = backgroundColors.dark; useBackgroundImage = false; });
+if (bgBtn2) bgBtn2.addEventListener('click', () => { currentBackground = backgroundColors.blue; useBackgroundImage = false; });
+if (bgBtn3) bgBtn3.addEventListener('click', () => { currentBackground = backgroundColors.green; useBackgroundImage = false; });
+if (bgBtn4) bgBtn4.addEventListener('click', () => { currentBackground = backgroundColors.red; useBackgroundImage = false; });
+if (bgBtnImg) bgBtnImg.addEventListener('click', () => { useBackgroundImage = true; });
 
 loop();
