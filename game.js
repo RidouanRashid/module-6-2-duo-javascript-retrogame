@@ -16,7 +16,7 @@ let leftY = (height - paddleHeight) / 2;
 const rightX = width - 20 - paddleWidth;
 let rightY = (height - paddleHeight) / 2;
 
-const ballSize = 10;
+const ballSize = 16;
 const initialBallSpeedX = 2;
 const initialBallSpeedY = 1.5;
 
@@ -44,7 +44,6 @@ let downDown = false;
 
 const modeEl = document.getElementById('modeText');
 
-// --- BACKGROUND COLORS ---
 const backgroundColors = {
   dark: '#222',
   blue: '#001a4d',
@@ -52,8 +51,24 @@ const backgroundColors = {
   red: '#4d0000'
 };
 let currentBackground = backgroundColors.dark;
+let currentBackgroundImage = null;
+let useBackgroundImage = false;
 
-// --- GAME MODES ---
+
+const bgImage = new Image();
+bgImage.src = 'img/kerst.png';
+bgImage.onload = () => {
+  console.log('Background image loaded successfully');
+};
+
+
+const ballImage = new Image();
+ballImage.src = 'img/kerstbal.png';
+ballImage.onload = () => {
+  console.log('Ball image loaded successfully');
+};
+
+
 const MODE_CLASSIC = "classic";   
 const MODE_COOP_AI = "coop_ai";   
 const MODE_MULTI = "multi";
@@ -64,8 +79,8 @@ const MODE_ORDER = [MODE_CLASSIC, MODE_COOP_AI, MODE_MULTI];
 let leftY2 = (height - paddleHeight) / 2 + 60;
 
 
-const aiSpeed = 10;
-const aiError = 5; 
+const aiSpeed = 5;
+const aiError = 20; 
 
 
 let paused = false;
@@ -265,8 +280,13 @@ function handleGameOver(winner) {
 function draw() {
   ctx.clearRect(0, 0, width, height);
 
-  ctx.fillStyle = currentBackground;
-  ctx.fillRect(0, 0, width, height);
+  // Draw background
+  if (useBackgroundImage && bgImage.complete) {
+    ctx.drawImage(bgImage, 0, 0, width, height);
+  } else {
+    ctx.fillStyle = currentBackground;
+    ctx.fillRect(0, 0, width, height);
+  }
 
   ctx.fillStyle = "#fff";
 
@@ -278,8 +298,13 @@ function draw() {
   }
   ctx.fillRect(rightX, rightY, paddleWidth, paddleHeight);
 
+  // Draw balls
   for (const b of balls) {
-    ctx.fillRect(b.x, b.y, b.size, b.size);
+    if (useBackgroundImage && ballImage.complete) {
+      ctx.drawImage(ballImage, b.x, b.y, b.size, b.size);
+    } else {
+      ctx.fillRect(b.x, b.y, b.size, b.size);
+    }
   }
 
   ctx.font = "20px Arial";
@@ -355,15 +380,17 @@ resetGame();
 if (resetBtn) resetBtn.addEventListener('click', resetGame);
 if (pauseBtn) pauseBtn.addEventListener('click', togglePause);
 
-// Background color buttons
+
 const bgBtn1 = document.getElementById('bgBtn1');
 const bgBtn2 = document.getElementById('bgBtn2');
 const bgBtn3 = document.getElementById('bgBtn3');
 const bgBtn4 = document.getElementById('bgBtn4');
+const bgBtnImg = document.getElementById('bgBtnImg');
 
-if (bgBtn1) bgBtn1.addEventListener('click', () => { currentBackground = backgroundColors.dark; });
-if (bgBtn2) bgBtn2.addEventListener('click', () => { currentBackground = backgroundColors.blue; });
-if (bgBtn3) bgBtn3.addEventListener('click', () => { currentBackground = backgroundColors.green; });
-if (bgBtn4) bgBtn4.addEventListener('click', () => { currentBackground = backgroundColors.red; });
+if (bgBtn1) bgBtn1.addEventListener('click', () => { currentBackground = backgroundColors.dark; useBackgroundImage = false; });
+if (bgBtn2) bgBtn2.addEventListener('click', () => { currentBackground = backgroundColors.blue; useBackgroundImage = false; });
+if (bgBtn3) bgBtn3.addEventListener('click', () => { currentBackground = backgroundColors.green; useBackgroundImage = false; });
+if (bgBtn4) bgBtn4.addEventListener('click', () => { currentBackground = backgroundColors.red; useBackgroundImage = false; });
+if (bgBtnImg) bgBtnImg.addEventListener('click', () => { useBackgroundImage = true; });
 
 loop();
