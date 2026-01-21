@@ -87,11 +87,29 @@ let paused = false;
 let gameOver = false;
 
 
+let goalEffectTimer = 0;      
+let goalEffectMax = 28;       
+let goalText = "";
+let shakeTimer = 0;          
+let shakeStrength = 5;        
+let goalFlashAlpha = 0.25;    
+
+
+
 function clamp(value, min, max) {
   if (value < min) return min;
   if (value > max) return max;
   return value;
 }
+
+function triggerGoalEffect(scoringSide) {
+  goalEffectTimer = goalEffectMax;
+  shakeTimer = 16;
+
+
+  goalText = scoringSide === "left" ? "LEFT SCORES!" : "RIGHT SCORES!";
+}
+
 
 function setMode(mode) {
   if (!MODE_ORDER.includes(mode)) return;
@@ -194,15 +212,25 @@ function moveBall() {
 
     if (b.x + b.size < 0) {
       if (rightScore < 10) rightScore += 1;
-      if (rightScore >= 10) { rightScore = 10; handleGameOver('Right'); }
-      balls[i] = makeBall(1);
-    }
-    if (b.x > width) {
-      if (leftScore < 10) leftScore += 1;
-      if (leftScore >= 10) { leftScore = 10; handleGameOver('Left'); }
-      balls[i] = makeBall(-1);
-    }
+
+    
+    triggerGoalEffect("right");
+
+    if (rightScore >= 10) { rightScore = 10; handleGameOver('Right'); }
+    balls[i] = makeBall(1);
   }
+
+  if (b.x > width) {
+    if (leftScore < 10) leftScore += 1;
+
+
+    triggerGoalEffect("left");
+
+    if (leftScore >= 10) { leftScore = 10; handleGameOver('Left'); }
+    balls[i] = makeBall(-1);
+  }
+
+    }
 }
 
 function resetBall(direction) {
@@ -280,6 +308,15 @@ function handleGameOver(winner) {
 function draw() {
   ctx.clearRect(0, 0, width, height);
 
+
+  ctx.save();
+  if (shakeTimer > 0) {
+    const dx = (Math.random() * 2 - 1) * shakeStrength;
+    const dy = (Math.random() * 2 - 1) * shakeStrength;
+    ctx.translate(dx, dy);
+  }
+
+
   // Draw background
   if (useBackgroundImage && bgImage.complete) {
     ctx.drawImage(bgImage, 0, 0, width, height);
@@ -339,13 +376,35 @@ function draw() {
     ctx.font = "18px Arial";
     ctx.fillText('Press Reset to play again', width / 2, height / 2 + 20);
   }
+
+    // --- GOAL FLASH + TEXT overlay ---
+  if (goalEffectTimer > 0) {
+    const t = goalEffectTimer / goalEffectMax; // 1 -> 0
+    ctx.fillStyle = `rgba(255,255,255,${goalFlashAlpha * t})`;
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.font = "bold 34px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = `rgba(0,0,0,${0.85 * t})`;
+    ctx.fillText(goalText, width / 2, height / 2);
+  }
+
+  ctx.restore();
+
 }
 
 function update() {
   if (gameOver) return;
+
+  
+  if (goalEffectTimer > 0) goalEffectTimer--;
+  if (shakeTimer > 0) shakeTimer--;
+
   handleInput();
   moveBall();
 }
+
 
 function loop() {
   if (!paused) {
