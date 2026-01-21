@@ -22,6 +22,45 @@ const initialBallSpeedY = 1.5;
 
 let balls = [];
 
+let totalBounces = 0;
+let splitStage = 0;
+let nextThreshold = 3; 
+let nextMultiplier = 2; 
+const MAX_TOTAL_BALLS = 6;
+
+function resetSplitState() {
+  totalBounces = 0;
+  nextThreshold = 2; 
+}
+
+function splitBallsToCount(targetCount) {
+  if (balls.length >= targetCount) return;
+  const current = balls.slice();
+  const newBalls = current.slice();
+  let idx = 0;
+  while (newBalls.length < targetCount && newBalls.length < MAX_TOTAL_BALLS) {
+    const src = current[idx % current.length];
+    const speed = Math.max(1, Math.hypot(src.sx, src.sy));
+    const baseAngle = Math.atan2(src.sy, src.sx);
+    const spread = (newBalls.length - current.length / 2) * 0.35 + (Math.random() * 0.4 - 0.2);
+    const angle = baseAngle + spread;
+    const sx = Math.cos(angle) * speed;
+    const sy = Math.sin(angle) * speed;
+    newBalls.push({ x: src.x, y: src.y, sx: sx, sy: sy, size: src.size });
+    idx++;
+  }
+  balls = newBalls.slice(0, Math.min(targetCount, MAX_TOTAL_BALLS));
+}
+
+function checkSplit() {
+  if (gameMode !== MODE_MULTI) return;
+  if (totalBounces >= nextThreshold && balls.length < MAX_TOTAL_BALLS) {
+    const target = Math.min(balls.length + 1, MAX_TOTAL_BALLS);
+    splitBallsToCount(target);
+    nextThreshold *= 2; 
+  }
+}
+
 function makeBall(direction) {
   const sx = direction < 0 ? -Math.abs(initialBallSpeedX) : Math.abs(initialBallSpeedX);
   const sy = Math.random() < 0.5 ? initialBallSpeedY : -initialBallSpeedY;
@@ -33,7 +72,7 @@ const maxBallSpeed = 12;
 
 let leftScore = 0;
 let rightScore = 0;
-const timeLimitSeconds = 60; 
+const timeLimitSeconds = 120; 
 let remainingSeconds = timeLimitSeconds;
 let timerInterval = null;
 
@@ -199,6 +238,8 @@ function moveBall() {
         const hitPos = (b.y + b.size / 2) - (leftY + paddleHeight / 2);
         b.sy += (hitPos / (paddleHeight / 2)) * 1.5;
         increaseBallSpeed(b);
+        totalBounces++;
+        checkSplit();
       }
     }
 
@@ -208,6 +249,8 @@ function moveBall() {
       const hitPosR = (b.y + b.size / 2) - (rightY + paddleHeight / 2);
       b.sy += (hitPosR / (paddleHeight / 2)) * 1.5;
       increaseBallSpeed(b);
+      totalBounces++;
+      checkSplit();
     }
 
     if (b.x + b.size < 0) {
@@ -255,8 +298,8 @@ function resetGame() {
     rightY = (height - paddleHeight) / 2;
     leftY2 = (height - paddleHeight) / 2;
     if (gameMode === MODE_MULTI) {
-      balls = [ makeBall(1), makeBall(-1) ];
-      balls[1].y += 30; balls[2].y -= 30;
+      balls = [ makeBall(1) ];
+      resetSplitState();
     } else {
       balls = [ makeBall(1) ];
     }
