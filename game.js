@@ -380,7 +380,7 @@ resetGame();
 if (resetBtn) resetBtn.addEventListener('click', resetGame);
 if (pauseBtn) pauseBtn.addEventListener('click', togglePause);
 
-// Background color buttons
+
 const bgBtn1 = document.getElementById('bgBtn1');
 const bgBtn2 = document.getElementById('bgBtn2');
 const bgBtn3 = document.getElementById('bgBtn3');
