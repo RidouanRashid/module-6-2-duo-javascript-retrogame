@@ -194,14 +194,14 @@ function handleInput() {
     if (wDown) leftY -= paddleSpeed;
     if (sDown) leftY += paddleSpeed;
 
-    
+
     if (upDown) leftY2 -= paddleSpeed;
     if (downDown) leftY2 += paddleSpeed;
 
     leftY = clamp(leftY, 0, height - paddleHeight);
     leftY2 = clamp(leftY2, 0, height - paddleHeight);
 
-    
+
     const targetBallY = (balls.length > 0) ? balls[0].y : (typeof ballY !== 'undefined' ? ballY : height/2);
     const aiTarget = targetBallY - paddleHeight / 2 + (Math.random() * 2 - 1) * aiError;
     if (aiTarget > rightY) rightY += aiSpeed;
@@ -284,7 +284,7 @@ function moveBall() {
     if (b.x + b.size < 0) {
       if (rightScore < 10) rightScore += 1;
 
-    
+
     triggerGoalEffect("right");
 
     if (rightScore >= 10) { rightScore = 10; handleGameOver('Right'); }
@@ -464,7 +464,7 @@ function draw() {
   ctx.fillText(leftScore, width / 2 - 40, 30);
   ctx.fillText(rightScore, width / 2 + 40, 30);
 
-  
+
   ctx.textAlign = "right";
   ctx.fillText(`Time: ${remainingSeconds}s`, width - 10, 30);
   ctx.textAlign = "center";
@@ -512,7 +512,7 @@ function draw() {
 function update() {
   if (gameOver) return;
 
-  
+
   if (goalEffectTimer > 0) goalEffectTimer--;
   if (shakeTimer > 0) shakeTimer--;
 
