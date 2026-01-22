@@ -164,6 +164,7 @@ function updateModeText() {
   modeEl.textContent = text;
 }
 
+
 window.addEventListener("keydown", (e) => {
   const k = e.key && e.key.toLowerCase();
   if (k === 'm') {
