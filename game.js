@@ -100,13 +100,11 @@ bgImage.onload = () => {
   console.log('Background image loaded successfully');
 };
 
-
 const ballImage = new Image();
 ballImage.src = 'img/kerstbal.png';
 ballImage.onload = () => {
   console.log('Ball image loaded successfully');
 };
-
 
 const MODE_CLASSIC = "classic";   
 const MODE_COOP_AI = "coop_ai";   
@@ -117,14 +115,11 @@ const MODE_ORDER = [MODE_CLASSIC, MODE_COOP_AI, MODE_MULTI];
 
 let leftY2 = (height - paddleHeight) / 2 + 60;
 
-
 const aiSpeed = 5;
 const aiError = 20; 
 
-
 let paused = false;
 let gameOver = false;
-
 
 let goalEffectTimer = 0;      
 let goalEffectMax = 28;       
@@ -132,8 +127,6 @@ let goalText = "";
 let shakeTimer = 0;          
 let shakeStrength = 5;        
 let goalFlashAlpha = 0.25;    
-
-
 
 function clamp(value, min, max) {
   if (value < min) return min;
@@ -148,7 +141,6 @@ function triggerGoalEffect(scoringSide) {
 
   goalText = scoringSide === "left" ? "LEFT SCORES!" : "RIGHT SCORES!";
 }
-
 
 function setMode(mode) {
   if (!MODE_ORDER.includes(mode)) return;
@@ -177,7 +169,6 @@ window.addEventListener("keydown", (e) => {
     setMode(prev);
   }
 });
-
 
 function handleInput() {
   if (gameMode === MODE_CLASSIC || gameMode === MODE_MULTI) {
@@ -210,7 +201,6 @@ function handleInput() {
     rightY = clamp(rightY, 0, height - paddleHeight);
   }
 }
-
 
 function moveBall() {
   for (let i = 0; i < balls.length; i++) {
