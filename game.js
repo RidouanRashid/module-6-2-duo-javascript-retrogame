@@ -109,8 +109,9 @@ ballImage.onload = () => {
 const MODE_CLASSIC = "classic";   
 const MODE_COOP_AI = "coop_ai";   
 const MODE_MULTI = "multi";
+const MODE_OBSTACLES = "obstacles";
 let gameMode = MODE_CLASSIC;    
-const MODE_ORDER = [MODE_CLASSIC, MODE_COOP_AI, MODE_MULTI];
+const MODE_ORDER = [MODE_CLASSIC, MODE_COOP_AI, MODE_MULTI, MODE_OBSTACLES];
 
 
 let leftY2 = (height - paddleHeight) / 2 + 60;
@@ -120,6 +121,11 @@ const aiError = 20;
 
 let paused = false;
 let gameOver = false;
+
+// Obstacles (rectangles) placed in the field for the Obstacles mode
+let obstacles = [];
+let obstacleWidth = paddleWidth * 2;
+let obstacleHeight = Math.max(8, Math.floor(paddleHeight / 2)); // about half the paddle
 
 let goalEffectTimer = 0;      
 let goalEffectMax = 28;       
@@ -153,6 +159,7 @@ function updateModeText() {
   let text = 'Mode: Classic';
   if (gameMode === MODE_COOP_AI) text = 'Mode: Coop AI';
   if (gameMode === MODE_MULTI) text = 'Mode: Multi-ball';
+  if (gameMode === MODE_OBSTACLES) text = 'Mode: Obstacles';
   text += ' — Press M for next mode, N for previous mode';
   modeEl.textContent = text;
 }
@@ -171,7 +178,7 @@ window.addEventListener("keydown", (e) => {
 });
 
 function handleInput() {
-  if (gameMode === MODE_CLASSIC || gameMode === MODE_MULTI) {
+  if (gameMode === MODE_CLASSIC || gameMode === MODE_MULTI || gameMode === MODE_OBSTACLES) {
     if (wDown) leftY -= paddleSpeed;
     if (sDown) leftY += paddleSpeed;
     if (upDown) rightY -= paddleSpeed;
@@ -219,6 +226,36 @@ function moveBall() {
       increaseBallSpeed(b);
     }
 
+    // Obstacle collisions (only in Obstacles mode when obstacles exist)
+    if (obstacles && obstacles.length > 0) {
+      for (let oi = 0; oi < obstacles.length; oi++) {
+        const obs = obstacles[oi];
+        if (b.x < obs.x + obs.w && b.x + b.size > obs.x && b.y < obs.y + obs.h && b.y + b.size > obs.y) {
+          const overlapLeft = (b.x + b.size) - obs.x;
+          const overlapRight = (obs.x + obs.w) - b.x;
+          const overlapTop = (b.y + b.size) - obs.y;
+          const overlapBottom = (obs.y + obs.h) - b.y;
+          const minOverlap = Math.min(overlapLeft, overlapRight, overlapTop, overlapBottom);
+          if (minOverlap === overlapLeft) {
+            b.x = obs.x - b.size;
+            b.sx = -Math.abs(b.sx);
+          } else if (minOverlap === overlapRight) {
+            b.x = obs.x + obs.w;
+            b.sx = Math.abs(b.sx);
+          } else if (minOverlap === overlapTop) {
+            b.y = obs.y - b.size;
+            b.sy = -Math.abs(b.sy);
+          } else {
+            b.y = obs.y + obs.h;
+            b.sy = Math.abs(b.sy);
+          }
+          increaseBallSpeed(b);
+          totalBounces++;
+          checkSplit();
+        }
+      }
+    }
+
     if (b.sx < 0 && b.x <= leftX + paddleWidth) {
       const hitLeft1 = b.y + b.size >= leftY && b.y <= leftY + paddleHeight;
       const hitLeft2 = (gameMode === MODE_COOP_AI) && (b.y + b.size >= leftY2 && b.y <= leftY2 + paddleHeight);
@@ -251,6 +288,8 @@ function moveBall() {
 
     if (rightScore >= 10) { rightScore = 10; handleGameOver('Right'); }
     balls[i] = makeBall(1);
+    // reposition obstacles when a score happens
+    if (gameMode === MODE_OBSTACLES) repositionObstacles();
   }
 
   if (b.x > width) {
@@ -261,6 +300,8 @@ function moveBall() {
 
     if (leftScore >= 10) { leftScore = 10; handleGameOver('Left'); }
     balls[i] = makeBall(-1);
+    // reposition obstacles when a score happens
+    if (gameMode === MODE_OBSTACLES) repositionObstacles();
   }
 
     }
@@ -287,6 +328,17 @@ function resetGame() {
     leftY = (height - paddleHeight) / 2;
     rightY = (height - paddleHeight) / 2;
     leftY2 = (height - paddleHeight) / 2;
+    // reset obstacles
+    obstacles = [];
+    if (gameMode === MODE_OBSTACLES) {
+      // place three obstacles across the middle third of the field
+      const xs = [width * 0.36, width * 0.5, width * 0.64];
+      for (let i = 0; i < xs.length; i++) {
+        const ox = xs[i] - obstacleWidth / 2;
+        const oy = Math.floor((height - obstacleHeight) / 2 + (i - 1) * 8); // slight offset
+        obstacles.push({ x: ox, y: oy, w: obstacleWidth, h: obstacleHeight });
+      }
+    }
     if (gameMode === MODE_MULTI) {
       balls = [ makeBall(1) ];
       resetSplitState();
@@ -299,6 +351,27 @@ function resetGame() {
   paused = false;
   if (pauseBtn) pauseBtn.textContent = "Pause";
   try { localStorage.removeItem('pongWinner'); } catch (e) {}
+}
+
+function repositionObstacles() {
+  if (gameMode !== MODE_OBSTACLES) return;
+  if (!obstacles || obstacles.length === 0) return;
+  const baseFractions = [0.36, 0.5, 0.64];
+  for (let i = 0; i < obstacles.length; i++) {
+    const o = obstacles[i];
+    const baseX = (baseFractions[i % baseFractions.length] || 0.5) * width;
+    const jitterX = (Math.random() * 0.08 - 0.04) * width; // small horizontal jitter
+    o.x = Math.floor(baseX - o.w / 2 + jitterX);
+    // vertical random but keep some margin
+    const minY = 20;
+    const maxY = Math.max(minY, height - o.h - 20);
+    o.y = Math.floor(minY + Math.random() * (maxY - minY));
+    // ensure not overlapping paddles horizontally
+    const leftLimit = leftX + paddleWidth + 8;
+    const rightLimit = rightX - o.w - 8;
+    if (o.x < leftLimit) o.x = leftLimit;
+    if (o.x > rightLimit) o.x = rightLimit;
+  }
 }
 
 function togglePause() {
@@ -361,7 +434,15 @@ function draw() {
   ctx.fillStyle = "#fff";
 
   ctx.fillRect(width / 2 - 1, 0, 2, height);
+  // Draw obstacles (if any)
+  if (obstacles && obstacles.length > 0) {
+    ctx.fillStyle = "#999";
+    for (const o of obstacles) {
+      ctx.fillRect(o.x, o.y, o.w, o.h);
+    }
+  }
 
+  ctx.fillStyle = "#fff";
   ctx.fillRect(leftX, leftY, paddleWidth, paddleHeight);
   if (gameMode === MODE_COOP_AI) {
     ctx.fillRect(leftX, leftY2, paddleWidth, paddleHeight);
