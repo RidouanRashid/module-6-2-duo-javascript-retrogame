@@ -1,3 +1,14 @@
+# Feed up 
+
+- Doel: Een eenvoudige retro Pong-game maken met meerdere spelmodi (Classic, Coop AI, Multi-ball, Obstacles) voor duo-programmering.
+- Verwachting: Werkende besturing, duidelijke score- en tijdfunctie, en minimaal één variant met AI-gedrag en obstakels.
+- Succescriteria: Spel speelt vloeiend, knoppen en modes werken, spelers krijgen visuele en auditieve feedback bij acties.
+# Feed forward
+
+- Verbeter UI/UX: zet de AI-difficulty knoppen zichtbaar in de layout en geef actieve status duidelijker (kleur/outline).
+- Tests & stabiliteit: voeg eenvoudige unit- of speeltests toe (bijv. snelheidschecks en botsing-tests) om regressies te voorkomen.
+- Extra features: animatie voor obstakelverplaatsing, meer variatie in obstakel-layouts, en optie om skill-progressie te schakelen (per time/score).
+- Code kwaliteit: voeg JSDoc-achtige comments bij belangrijke functies en splits grote bestanden als `game.js` in modules bij groei.
 # module-6-2-duo-javascript-retrogame 
 module 6,2 javascript retro game, Jelle Romijn en Ridouan Rashid 
 
@@ -16,3 +27,6 @@ https://trello.com/invite/b/6967863b278ebb4b907101e0/ATTI0c9a8df1cec6ef7af4cd9c9
 - geluid effecten
 - score systeem
 
+# Feed up 
+
+# Feed forward
