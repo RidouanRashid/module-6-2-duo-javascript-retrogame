@@ -1,3 +1,18 @@
+/*
+  game.js
+  Simple Pong - main game logic
+
+  Responsibilities:
+  - initialize canvas and controls
+  - manage game loop, input, drawing and update logic
+  - implement multiple game modes (classic, coop AI, multi, obstacles)
+  - basic AI difficulty scaling and obstacle management
+
+  Notes for maintainers:
+  - Keep UI changes in `index.html` or centralize DOM creation near the end of this file.
+  - If the file grows, consider splitting AI, rendering and game-state into modules.
+*/
+
 const resetBtn = document.querySelector('#resetBtn');
 const pauseBtn = document.querySelector('#pauseBtn');    
 const canvas = document.getElementById("game");
@@ -17,6 +32,10 @@ function playSound(audio) {
   audio.currentTime = 0;
   audio.play().catch(e => console.log('Sound play error:', e));
 }
+
+// -----------------------------------------------------------------------------
+// Split / multi-ball helpers
+// -----------------------------------------------------------------------------
 
 const paddleWidth = 10;
 const paddleHeight = 80;
@@ -45,6 +64,8 @@ function resetSplitState() {
   nextThreshold = 2; 
 }
 
+// Create additional balls up to `targetCount`. New balls inherit position and get varied angles.
+
 function splitBallsToCount(targetCount) {
   if (balls.length >= targetCount) return;
   const current = balls.slice();
@@ -72,6 +93,10 @@ function checkSplit() {
     nextThreshold *= 2; 
   }
 }
+
+// -----------------------------------------------------------------------------
+// Ball factory and speed helpers
+// -----------------------------------------------------------------------------
 
 function makeBall(direction) {
   const sx = direction < 0 ? -Math.abs(initialBallSpeedX) : Math.abs(initialBallSpeedX);
@@ -168,7 +193,7 @@ function triggerGoalEffect(scoringSide) {
   shakeTimer = 16;
 
 
-  goalText = scoringSide === "left" ? "LEFT SCORES!" : "RIGHT SCORES!";
+  goalText = scoringSide === "left" ? "LINKS SCOORT!" : "RECHTS SCOORT!";
 }
 
 function setMode(mode) {
@@ -185,13 +210,16 @@ function setMode(mode) {
   resetGame();
 }
 
+// Update the on-screen mode label based on current `gameMode`.
+// This keeps the player informed which ruleset is active.
+
 function updateModeText() {
   if (!modeEl) return;
-  let text = 'Mode: Classic';
-  if (gameMode === MODE_COOP_AI) text = 'Mode: Coop AI';
-  if (gameMode === MODE_MULTI) text = 'Mode: Multi-ball';
-  if (gameMode === MODE_OBSTACLES) text = 'Mode: Obstacles';
-  text += ' — Press M for next mode, N for previous mode';
+  let text = 'Modus: Klassiek';
+  if (gameMode === MODE_COOP_AI) text = 'Modus: Coop AI';
+  if (gameMode === MODE_MULTI) text = 'Modus: Multi-ball';
+  if (gameMode === MODE_OBSTACLES) text = 'Modus: Obstakels';
+  text += ' — Druk M voor volgende modus, N voor vorige modus';
   modeEl.textContent = text;
 }
 
@@ -231,10 +259,14 @@ function handleInput() {
     leftY = clamp(leftY, 0, height - paddleHeight);
     leftY2 = clamp(leftY2, 0, height - paddleHeight);
 
+    // Compute AI behavior based on chosen difficulty and current skill progression.
+    // `effectiveSpeed` controls how many pixels the AI paddle moves per update.
+    // `effectiveError` adds a random offset so the AI misses sometimes.
     const cfg = DIFFICULTY_CONFIG[aiDifficulty] || DIFFICULTY_CONFIG.medium;
     const effectiveSpeed = cfg.baseSpeed + aiSkillLevel * AI_SPEED_PER_SKILL;
     const effectiveError = Math.max(0, cfg.baseError - aiSkillLevel * AI_ERROR_REDUCTION_PER_SKILL);
 
+    // Aim for the first ball's center (if present). Add random error to simulate imperfection.
     const targetBallY = (balls.length > 0) ? (balls[0].y + balls[0].size / 2) : (height / 2);
     const aiTarget = targetBallY - paddleHeight / 2 + (Math.random() * 2 - 1) * effectiveError;
     if (aiTarget > rightY) rightY += effectiveSpeed;
@@ -249,10 +281,11 @@ function moveBall() {
     b.x += b.sx;
     b.y += b.sy;
 
+    // Bounce from top/bottom walls
     if (b.y <= 0) {
       b.y = 0;
       b.sy = -b.sy;
-      playSound(sndWall);
+      playSound(sndWall); // wall sound
       increaseBallSpeed(b);
     }
     if (b.y + b.size >= height) {
@@ -271,6 +304,7 @@ function moveBall() {
           const overlapTop = (b.y + b.size) - obs.y;
           const overlapBottom = (obs.y + obs.h) - b.y;
           const minOverlap = Math.min(overlapLeft, overlapRight, overlapTop, overlapBottom);
+          // Determine collision side by minimal overlap and reflect accordingly
           if (minOverlap === overlapLeft) {
             b.x = obs.x - b.size;
             b.sx = -Math.abs(b.sx);
@@ -284,6 +318,7 @@ function moveBall() {
             b.y = obs.y + obs.h;
             b.sy = Math.abs(b.sy);
           }
+          // treat obstacle bounce similar to paddle/wall: increase speed and count bounce
           increaseBallSpeed(b);
           totalBounces++;
           checkSplit();
@@ -363,7 +398,7 @@ function resetGame() {
     leftY = (height - paddleHeight) / 2;
     rightY = (height - paddleHeight) / 2;
     leftY2 = (height - paddleHeight) / 2;
-    // reset obstacles
+    // reset obstacles: initial placement for Obstacles mode
     obstacles = [];
     if (gameMode === MODE_OBSTACLES) {
       const xs = [width * 0.36, width * 0.5, width * 0.64];
@@ -383,7 +418,7 @@ function resetGame() {
     startTimer();
   gameOver = false;
   paused = false;
-  if (pauseBtn) pauseBtn.textContent = "Pause";
+  if (pauseBtn) pauseBtn.textContent = "Pauze";
   try { localStorage.removeItem('pongWinner'); } catch (e) {}
 }
 
@@ -406,11 +441,13 @@ function repositionObstacles() {
   }
 }
 
+// Toggle mute with button text update. Keeps audio control centralized.
+
 function togglePause() {
   if (gameOver) return; 
   paused = !paused;
   if (pauseBtn) {
-    pauseBtn.textContent = paused ? "Resume" : "Pause";
+    pauseBtn.textContent = paused ? "Doorgaan" : "Pauze";
   }
 }
 
@@ -503,7 +540,7 @@ function draw() {
 
 
   ctx.textAlign = "right";
-  ctx.fillText(`Time: ${remainingSeconds}s`, width - 10, 30);
+  ctx.fillText(`Tijd: ${remainingSeconds}s`, width - 10, 30);
   ctx.textAlign = "center";
 
   if (paused) {
@@ -512,7 +549,7 @@ function draw() {
     ctx.fillStyle = "#fff";
     ctx.font = "28px Arial";
     ctx.textAlign = "center";
-    ctx.fillText("Paused", width / 2, height / 2);
+    ctx.fillText("Pauze", width / 2, height / 2);
   }
 
   if (gameOver) {
@@ -522,11 +559,11 @@ function draw() {
     ctx.font = "28px Arial";
     ctx.textAlign = "center";
     let winnerText = '';
-    if (leftScore === rightScore) winnerText = 'Draw!';
-    else winnerText = leftScore > rightScore ? 'Left Player Wins!' : 'Right Player Wins!';
-    ctx.fillText(`Game Over - ${winnerText}`, width / 2, height / 2 - 10);
+    if (leftScore === rightScore) winnerText = 'Gelijkspel!';
+    else winnerText = leftScore > rightScore ? 'Speler Links wint!' : 'Speler Rechts wint!';
+    ctx.fillText(`Einde spel - ${winnerText}`, width / 2, height / 2 - 10);
     ctx.font = "18px Arial";
-    ctx.fillText('Press Reset to play again', width / 2, height / 2 + 20);
+    ctx.fillText('Druk op Opnieuw om opnieuw te spelen', width / 2, height / 2 + 20);
   }
 
     // --- GOAL FLASH + TEXT overlay ---
@@ -595,7 +632,7 @@ const muteBtn = document.getElementById('muteBtn');
 if (muteBtn) {
   muteBtn.addEventListener('click', () => {
     isMuted = !isMuted;
-    muteBtn.textContent = isMuted ? 'Mute: OFF' : 'Mute: ON';
+    muteBtn.textContent = isMuted ? 'Geluid: UIT' : 'Geluid: AAN';
   });
 }
 
@@ -614,15 +651,15 @@ function createAiDifficultyUI() {
   container.style.display = 'none';
 
   const label = document.createElement('span');
-  label.textContent = 'AI Difficulty: ';
+  label.textContent = 'AI Moeilijkheid: ';
   label.style.marginRight = '6px';
   label.style.fontFamily = 'Arial, sans-serif';
   container.appendChild(label);
-
+  const labelMap = { easy: 'Makkelijk', medium: 'Gemiddeld', hard: 'Moeilijk' };
   ['easy', 'medium', 'hard'].forEach(d => {
     const btn = document.createElement('button');
     btn.className = 'button ai-difficulty-btn';
-    btn.textContent = d.charAt(0).toUpperCase() + d.slice(1);
+    btn.textContent = labelMap[d] || d;
     btn.dataset.diff = d;
     btn.style.marginRight = '6px';
     btn.addEventListener('click', () => {
