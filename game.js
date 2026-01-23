@@ -6,6 +6,18 @@ const ctx = canvas.getContext("2d");
 const width = canvas.width;
 const height = canvas.height;
 
+// Sound effects
+const sndGoal = new Audio('sounds/sndGoal.wav');
+const sndPaddle = new Audio('sounds/sndPaddle.wav');
+const sndWall = new Audio('sounds/sndWall.wav');
+let isMuted = false;
+
+function playSound(audio) {
+  if (isMuted) return;
+  audio.currentTime = 0;
+  audio.play().catch(e => console.log('Sound play error:', e));
+}
+
 const paddleWidth = 10;
 const paddleHeight = 80;
 const paddleSpeed = 6;
@@ -211,11 +223,13 @@ function moveBall() {
     if (b.y <= 0) {
       b.y = 0;
       b.sy = -b.sy;
+      playSound(sndWall);
       increaseBallSpeed(b);
     }
     if (b.y + b.size >= height) {
       b.y = height - b.size;
       b.sy = -b.sy;
+      playSound(sndWall);
       increaseBallSpeed(b);
     }
 
@@ -227,6 +241,7 @@ function moveBall() {
         b.sx = -b.sx;
         const hitPos = (b.y + b.size / 2) - (leftY + paddleHeight / 2);
         b.sy += (hitPos / (paddleHeight / 2)) * 1.5;
+        playSound(sndPaddle);
         increaseBallSpeed(b);
         totalBounces++;
         checkSplit();
@@ -238,6 +253,7 @@ function moveBall() {
       b.sx = -b.sx;
       const hitPosR = (b.y + b.size / 2) - (rightY + paddleHeight / 2);
       b.sy += (hitPosR / (paddleHeight / 2)) * 1.5;
+      playSound(sndPaddle);
       increaseBallSpeed(b);
       totalBounces++;
       checkSplit();
@@ -246,7 +262,7 @@ function moveBall() {
     if (b.x + b.size < 0) {
       if (rightScore < 10) rightScore += 1;
 
-
+    playSound(sndGoal);
     triggerGoalEffect("right");
 
     if (rightScore >= 10) { rightScore = 10; handleGameOver('Right'); }
@@ -256,7 +272,7 @@ function moveBall() {
   if (b.x > width) {
     if (leftScore < 10) leftScore += 1;
 
-
+    playSound(sndGoal);
     triggerGoalEffect("left");
 
     if (leftScore >= 10) { leftScore = 10; handleGameOver('Left'); }
@@ -471,6 +487,14 @@ resetGame();
 
 if (resetBtn) resetBtn.addEventListener('click', resetGame);
 if (pauseBtn) pauseBtn.addEventListener('click', togglePause);
+
+const muteBtn = document.getElementById('muteBtn');
+if (muteBtn) {
+  muteBtn.addEventListener('click', () => {
+    isMuted = !isMuted;
+    muteBtn.textContent = isMuted ? 'Mute: OFF' : 'Mute: ON';
+  });
+}
 
 
 const bgBtn1 = document.getElementById('bgBtn1');
