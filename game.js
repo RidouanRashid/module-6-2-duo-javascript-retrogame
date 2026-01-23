@@ -193,7 +193,7 @@ function triggerGoalEffect(scoringSide) {
   shakeTimer = 16;
 
 
-  goalText = scoringSide === "left" ? "LEFT SCORES!" : "RIGHT SCORES!";
+  goalText = scoringSide === "left" ? "LINKS SCOORT!" : "RECHTS SCOORT!";
 }
 
 function setMode(mode) {
@@ -215,11 +215,11 @@ function setMode(mode) {
 
 function updateModeText() {
   if (!modeEl) return;
-  let text = 'Mode: Classic';
-  if (gameMode === MODE_COOP_AI) text = 'Mode: Coop AI';
-  if (gameMode === MODE_MULTI) text = 'Mode: Multi-ball';
-  if (gameMode === MODE_OBSTACLES) text = 'Mode: Obstacles';
-  text += ' — Press M for next mode, N for previous mode';
+  let text = 'Modus: Klassiek';
+  if (gameMode === MODE_COOP_AI) text = 'Modus: Coop AI';
+  if (gameMode === MODE_MULTI) text = 'Modus: Multi-ball';
+  if (gameMode === MODE_OBSTACLES) text = 'Modus: Obstakels';
+  text += ' — Druk M voor volgende modus, N voor vorige modus';
   modeEl.textContent = text;
 }
 
@@ -418,7 +418,7 @@ function resetGame() {
     startTimer();
   gameOver = false;
   paused = false;
-  if (pauseBtn) pauseBtn.textContent = "Pause";
+  if (pauseBtn) pauseBtn.textContent = "Pauze";
   try { localStorage.removeItem('pongWinner'); } catch (e) {}
 }
 
@@ -447,7 +447,7 @@ function togglePause() {
   if (gameOver) return; 
   paused = !paused;
   if (pauseBtn) {
-    pauseBtn.textContent = paused ? "Resume" : "Pause";
+    pauseBtn.textContent = paused ? "Doorgaan" : "Pauze";
   }
 }
 
@@ -540,7 +540,7 @@ function draw() {
 
 
   ctx.textAlign = "right";
-  ctx.fillText(`Time: ${remainingSeconds}s`, width - 10, 30);
+  ctx.fillText(`Tijd: ${remainingSeconds}s`, width - 10, 30);
   ctx.textAlign = "center";
 
   if (paused) {
@@ -549,7 +549,7 @@ function draw() {
     ctx.fillStyle = "#fff";
     ctx.font = "28px Arial";
     ctx.textAlign = "center";
-    ctx.fillText("Paused", width / 2, height / 2);
+    ctx.fillText("Pauze", width / 2, height / 2);
   }
 
   if (gameOver) {
@@ -559,11 +559,11 @@ function draw() {
     ctx.font = "28px Arial";
     ctx.textAlign = "center";
     let winnerText = '';
-    if (leftScore === rightScore) winnerText = 'Draw!';
-    else winnerText = leftScore > rightScore ? 'Left Player Wins!' : 'Right Player Wins!';
-    ctx.fillText(`Game Over - ${winnerText}`, width / 2, height / 2 - 10);
+    if (leftScore === rightScore) winnerText = 'Gelijkspel!';
+    else winnerText = leftScore > rightScore ? 'Speler Links wint!' : 'Speler Rechts wint!';
+    ctx.fillText(`Einde spel - ${winnerText}`, width / 2, height / 2 - 10);
     ctx.font = "18px Arial";
-    ctx.fillText('Press Reset to play again', width / 2, height / 2 + 20);
+    ctx.fillText('Druk op Opnieuw om opnieuw te spelen', width / 2, height / 2 + 20);
   }
 
     // --- GOAL FLASH + TEXT overlay ---
@@ -632,7 +632,7 @@ const muteBtn = document.getElementById('muteBtn');
 if (muteBtn) {
   muteBtn.addEventListener('click', () => {
     isMuted = !isMuted;
-    muteBtn.textContent = isMuted ? 'Mute: OFF' : 'Mute: ON';
+    muteBtn.textContent = isMuted ? 'Geluid: UIT' : 'Geluid: AAN';
   });
 }
 
@@ -651,15 +651,15 @@ function createAiDifficultyUI() {
   container.style.display = 'none';
 
   const label = document.createElement('span');
-  label.textContent = 'AI Difficulty: ';
+  label.textContent = 'AI Moeilijkheid: ';
   label.style.marginRight = '6px';
   label.style.fontFamily = 'Arial, sans-serif';
   container.appendChild(label);
-
+  const labelMap = { easy: 'Makkelijk', medium: 'Gemiddeld', hard: 'Moeilijk' };
   ['easy', 'medium', 'hard'].forEach(d => {
     const btn = document.createElement('button');
     btn.className = 'button ai-difficulty-btn';
-    btn.textContent = d.charAt(0).toUpperCase() + d.slice(1);
+    btn.textContent = labelMap[d] || d;
     btn.dataset.diff = d;
     btn.style.marginRight = '6px';
     btn.addEventListener('click', () => {
