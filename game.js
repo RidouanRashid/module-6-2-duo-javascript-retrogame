@@ -116,16 +116,27 @@ const MODE_ORDER = [MODE_CLASSIC, MODE_COOP_AI, MODE_MULTI, MODE_OBSTACLES];
 
 let leftY2 = (height - paddleHeight) / 2 + 60;
 
-const aiSpeed = 5;
-const aiError = 20; 
+
+let aiDifficulty = 'medium'; 
+const DIFFICULTY_CONFIG = {
+  easy: { baseSpeed: 3, baseError: 40 },
+  medium: { baseSpeed: 5, baseError: 20 },
+  hard: { baseSpeed: 7, baseError: 10 }
+};
+let aiSkillLevel = 0; 
+let aiSkillSeconds = 0;
+const AI_SKILL_INCREASE_INTERVAL = 10; 
+const AI_MAX_SKILL = 5;
+const AI_SPEED_PER_SKILL = 0.6;
+const AI_ERROR_REDUCTION_PER_SKILL = 3; 
 
 let paused = false;
 let gameOver = false;
 
-// Obstacles (rectangles) placed in the field for the Obstacles mode
+
 let obstacles = [];
 let obstacleWidth = paddleWidth * 2;
-let obstacleHeight = Math.max(8, Math.floor(paddleHeight / 2)); // about half the paddle
+let obstacleHeight = Math.max(8, Math.floor(paddleHeight / 2));
 
 let goalEffectTimer = 0;      
 let goalEffectMax = 28;       
@@ -151,6 +162,14 @@ function triggerGoalEffect(scoringSide) {
 function setMode(mode) {
   if (!MODE_ORDER.includes(mode)) return;
   gameMode = mode;
+  // when switching to AI mode, reset AI skill progression and show controls
+  if (gameMode === MODE_COOP_AI) {
+    aiSkillLevel = 0;
+    aiSkillSeconds = 0;
+    showAiDifficultyControls(true);
+  } else {
+    showAiDifficultyControls(false);
+  }
   resetGame();
 }
 
@@ -194,18 +213,20 @@ function handleInput() {
     if (wDown) leftY -= paddleSpeed;
     if (sDown) leftY += paddleSpeed;
 
-
     if (upDown) leftY2 -= paddleSpeed;
     if (downDown) leftY2 += paddleSpeed;
 
     leftY = clamp(leftY, 0, height - paddleHeight);
     leftY2 = clamp(leftY2, 0, height - paddleHeight);
 
+    const cfg = DIFFICULTY_CONFIG[aiDifficulty] || DIFFICULTY_CONFIG.medium;
+    const effectiveSpeed = cfg.baseSpeed + aiSkillLevel * AI_SPEED_PER_SKILL;
+    const effectiveError = Math.max(0, cfg.baseError - aiSkillLevel * AI_ERROR_REDUCTION_PER_SKILL);
 
-    const targetBallY = (balls.length > 0) ? balls[0].y : (typeof ballY !== 'undefined' ? ballY : height/2);
-    const aiTarget = targetBallY - paddleHeight / 2 + (Math.random() * 2 - 1) * aiError;
-    if (aiTarget > rightY) rightY += aiSpeed;
-    else if (aiTarget < rightY) rightY -= aiSpeed;
+    const targetBallY = (balls.length > 0) ? (balls[0].y + balls[0].size / 2) : (height / 2);
+    const aiTarget = targetBallY - paddleHeight / 2 + (Math.random() * 2 - 1) * effectiveError;
+    if (aiTarget > rightY) rightY += effectiveSpeed;
+    else if (aiTarget < rightY) rightY -= effectiveSpeed;
     rightY = clamp(rightY, 0, height - paddleHeight);
   }
 }
@@ -227,7 +248,6 @@ function moveBall() {
       increaseBallSpeed(b);
     }
 
-    // Obstacle collisions (only in Obstacles mode when obstacles exist)
     if (obstacles && obstacles.length > 0) {
       for (let oi = 0; oi < obstacles.length; oi++) {
         const obs = obstacles[oi];
@@ -289,7 +309,6 @@ function moveBall() {
 
     if (rightScore >= 10) { rightScore = 10; handleGameOver('Right'); }
     balls[i] = makeBall(1);
-    // reposition obstacles when a score happens
     if (gameMode === MODE_OBSTACLES) repositionObstacles();
   }
 
@@ -301,7 +320,6 @@ function moveBall() {
 
     if (leftScore >= 10) { leftScore = 10; handleGameOver('Left'); }
     balls[i] = makeBall(-1);
-    // reposition obstacles when a score happens
     if (gameMode === MODE_OBSTACLES) repositionObstacles();
   }
 
@@ -332,11 +350,10 @@ function resetGame() {
     // reset obstacles
     obstacles = [];
     if (gameMode === MODE_OBSTACLES) {
-      // place three obstacles across the middle third of the field
       const xs = [width * 0.36, width * 0.5, width * 0.64];
       for (let i = 0; i < xs.length; i++) {
         const ox = xs[i] - obstacleWidth / 2;
-        const oy = Math.floor((height - obstacleHeight) / 2 + (i - 1) * 8); // slight offset
+        const oy = Math.floor((height - obstacleHeight) / 2 + (i - 1) * 8); 
         obstacles.push({ x: ox, y: oy, w: obstacleWidth, h: obstacleHeight });
       }
     }
@@ -361,13 +378,11 @@ function repositionObstacles() {
   for (let i = 0; i < obstacles.length; i++) {
     const o = obstacles[i];
     const baseX = (baseFractions[i % baseFractions.length] || 0.5) * width;
-    const jitterX = (Math.random() * 0.08 - 0.04) * width; // small horizontal jitter
+    const jitterX = (Math.random() * 0.08 - 0.04) * width; 
     o.x = Math.floor(baseX - o.w / 2 + jitterX);
-    // vertical random but keep some margin
     const minY = 20;
     const maxY = Math.max(minY, height - o.h - 20);
     o.y = Math.floor(minY + Math.random() * (maxY - minY));
-    // ensure not overlapping paddles horizontally
     const leftLimit = leftX + paddleWidth + 8;
     const rightLimit = rightX - o.w - 8;
     if (o.x < leftLimit) o.x = leftLimit;
@@ -394,6 +409,12 @@ function startTimer() {
         clearInterval(timerInterval);
         gameOver = true;
         handleGameOver('Time');
+      }
+      if (gameMode === MODE_COOP_AI) {
+        aiSkillSeconds += 1;
+        if (aiSkillSeconds > 0 && (aiSkillSeconds % AI_SKILL_INCREASE_INTERVAL) === 0) {
+          aiSkillLevel = Math.min(AI_MAX_SKILL, aiSkillLevel + 1);
+        }
       }
     }
   }, 1000);
@@ -561,10 +582,52 @@ const bgBtn3 = document.getElementById('bgBtn3');
 const bgBtn4 = document.getElementById('bgBtn4');
 const bgBtnImg = document.getElementById('bgBtnImg');
 
+function createAiDifficultyUI() {
+  const wrap = document.querySelector('.wrap') || document.body;
+  const container = document.createElement('div');
+  container.id = 'aiDifficultyControls';
+  container.style.marginTop = '10px';
+  container.style.display = 'none';
+
+  const label = document.createElement('span');
+  label.textContent = 'AI Difficulty: ';
+  label.style.marginRight = '6px';
+  label.style.fontFamily = 'Arial, sans-serif';
+  container.appendChild(label);
+
+  ['easy', 'medium', 'hard'].forEach(d => {
+    const btn = document.createElement('button');
+    btn.className = 'button ai-difficulty-btn';
+    btn.textContent = d.charAt(0).toUpperCase() + d.slice(1);
+    btn.dataset.diff = d;
+    btn.style.marginRight = '6px';
+    btn.addEventListener('click', () => {
+      aiDifficulty = d;
+      aiSkillLevel = 0;
+      aiSkillSeconds = 0;
+      // update active style
+      const all = container.querySelectorAll('.ai-difficulty-btn');
+      all.forEach(x => x.style.opacity = x === btn ? '1' : '0.7');
+    });
+    container.appendChild(btn);
+  });
+
+  wrap.appendChild(container);
+}
+
+function showAiDifficultyControls(show) {
+  const el = document.getElementById('aiDifficultyControls');
+  if (!el) return;
+  el.style.display = show ? 'block' : 'none';
+}
+
 if (bgBtn1) bgBtn1.addEventListener('click', () => { currentBackground = backgroundColors.dark; useBackgroundImage = false; });
 if (bgBtn2) bgBtn2.addEventListener('click', () => { currentBackground = backgroundColors.blue; useBackgroundImage = false; });
 if (bgBtn3) bgBtn3.addEventListener('click', () => { currentBackground = backgroundColors.green; useBackgroundImage = false; });
 if (bgBtn4) bgBtn4.addEventListener('click', () => { currentBackground = backgroundColors.red; useBackgroundImage = false; });
 if (bgBtnImg) bgBtnImg.addEventListener('click', () => { useBackgroundImage = true; });
+
+createAiDifficultyUI();
+showAiDifficultyControls(false);
 
 loop();
