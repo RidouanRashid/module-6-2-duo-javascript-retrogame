@@ -1,3 +1,9 @@
+/*
+  styles.css
+  Purpose: Basic styling for Simple Pong demo.
+  Notes: Buttons use the `.button` class. Adjust colors here for theme changes.
+*/
+
 * { box-sizing: border-box; }
 
 body {
