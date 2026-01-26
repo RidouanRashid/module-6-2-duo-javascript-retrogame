@@ -21,7 +21,6 @@ const ctx = canvas.getContext("2d");
 const width = canvas.width;
 const height = canvas.height;
 
-// Sound effects
 const sndGoal = new Audio('sounds/sndGoal.wav');
 const sndPaddle = new Audio('sounds/sndPaddle.wav');
 const sndWall = new Audio('sounds/sndWall.wav');
@@ -33,9 +32,6 @@ function playSound(audio) {
   audio.play().catch(e => console.log('Sound play error:', e));
 }
 
-// -----------------------------------------------------------------------------
-// Split / multi-ball helpers
-// -----------------------------------------------------------------------------
 
 const paddleWidth = 10;
 const paddleHeight = 80;
@@ -64,7 +60,7 @@ function resetSplitState() {
   nextThreshold = 2; 
 }
 
-// Create additional balls up to `targetCount`. New balls inherit position and get varied angles.
+
 
 function splitBallsToCount(targetCount) {
   if (balls.length >= targetCount) return;
@@ -259,14 +255,12 @@ function handleInput() {
     leftY = clamp(leftY, 0, height - paddleHeight);
     leftY2 = clamp(leftY2, 0, height - paddleHeight);
 
-    // Compute AI behavior based on chosen difficulty and current skill progression.
-    // `effectiveSpeed` controls how many pixels the AI paddle moves per update.
-    // `effectiveError` adds a random offset so the AI misses sometimes.
+
     const cfg = DIFFICULTY_CONFIG[aiDifficulty] || DIFFICULTY_CONFIG.medium;
     const effectiveSpeed = cfg.baseSpeed + aiSkillLevel * AI_SPEED_PER_SKILL;
     const effectiveError = Math.max(0, cfg.baseError - aiSkillLevel * AI_ERROR_REDUCTION_PER_SKILL);
 
-    // Aim for the first ball's center (if present). Add random error to simulate imperfection.
+
     const targetBallY = (balls.length > 0) ? (balls[0].y + balls[0].size / 2) : (height / 2);
     const aiTarget = targetBallY - paddleHeight / 2 + (Math.random() * 2 - 1) * effectiveError;
     if (aiTarget > rightY) rightY += effectiveSpeed;
@@ -281,11 +275,11 @@ function moveBall() {
     b.x += b.sx;
     b.y += b.sy;
 
-    // Bounce from top/bottom walls
+  
     if (b.y <= 0) {
       b.y = 0;
       b.sy = -b.sy;
-      playSound(sndWall); // wall sound
+      playSound(sndWall); 
       increaseBallSpeed(b);
     }
     if (b.y + b.size >= height) {
