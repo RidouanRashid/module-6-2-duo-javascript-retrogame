@@ -1,9 +1,9 @@
 <!--
   Simple Pong - index.html
-  Description: Entry point for the Pong game. Contains canvas and control buttons.
-  Authors: Jelle Romijn, Ridouan Rashid
-  Notes: The page loads `game.js` which handles all game logic. Add persistent UI elements here
-         (e.g. move AI difficulty controls here) if you prefer static buttons instead of dynamic creation.
+  Omschrijving: Toegangspunt voor het Pong-spel. Bevat het canvas en de knoppen.
+  Auteurs: Jelle Romijn, Ridouan Rashid
+  Aantekeningen: De pagina laadt `game.js` dat alle game-logica afhandelt. Voeg hier vaste UI-elementen toe
+  (bijv. verplaats AI-moeilijkheidsknoppen hierheen) als je statische knoppen verkiest boven dynamische aanmaak.
 -->
 <!DOCTYPE html>
 <html lang="nl">
@@ -20,15 +20,23 @@
     <button class="button" id="resetBtn">Opnieuw</button>
     <button class="button" id="pauseBtn">Pauze</button>
     <button class="button" id="muteBtn">Geluid: AAN</button>
-    <div id="modeText" style="margin-top:8px; font-family:Arial, sans-serif; font-size:14px; color:#333;"></div>
-    <div style="margin-top:12px;">
-      <button class="button" id="bgBtn1" title="Zwarte achtergrond">Zwart</button>
+<br>
+    <button class="button" id="bgBtn1" title="Zwarte achtergrond">Zwart</button>
       <button class="button" id="bgBtn2" title="Blauwe achtergrond">Blauw</button>
       <button class="button" id="bgBtn3" title="Groene achtergrond">Groen</button>
       <button class="button" id="bgBtn4" title="Rode achtergrond">Rood</button>
       <button class="button" id="bgBtnImg" title="Afbeelding achtergrond">Kerst</button>
+
+      <div class="instructies">
+        <strong>Instructies</strong>
+        <ul>
+          <li>Speler 1 (links): <strong>W</strong> omhoog, <strong>S</strong> omlaag</li>
+          <li>Speler 2 (rechts): <strong>↑</strong> omhoog, <strong>↓</strong> omlaag</li>
+          <li>Doel: scoor 10 punten om te winnen</li>
+          <li>Druk <strong>M</strong> voor volgende modus, <strong>N</strong> voor vorige modus</li>
+        </ul>
+      </div>
     </div>
-  </div>
   <script src="game.js"></script>
 </body>
 </html>

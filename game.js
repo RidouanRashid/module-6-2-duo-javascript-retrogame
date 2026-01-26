@@ -1,16 +1,16 @@
 /*
   game.js
-  Simple Pong - main game logic
+  Simple Pong - hoofdgame logica
 
-  Responsibilities:
-  - initialize canvas and controls
-  - manage game loop, input, drawing and update logic
-  - implement multiple game modes (classic, coop AI, multi, obstacles)
-  - basic AI difficulty scaling and obstacle management
+  Verantwoordelijkheden:
+  - initialiseren van canvas en besturingselementen
+  - beheren van de game-loop, invoer, tekenen en update-logica
+  - implementeren van meerdere spelmodi (klassiek, coop AI, multi, obstakels)
+  - basis AI-moeilijkheidsschaal en obstakelbeheer
 
-  Notes for maintainers:
-  - Keep UI changes in `index.html` or centralize DOM creation near the end of this file.
-  - If the file grows, consider splitting AI, rendering and game-state into modules.
+  Aantekeningen voor beheerders:
+  - Houd UI-wijzigingen in `index.html` of centraliseer DOM-aanmaak aan het einde van dit bestand.
+  - Als het bestand groeit, overweeg AI, rendering en game-state in modules te splitsen.
 */
 
 const resetBtn = document.querySelector('#resetBtn');
@@ -21,6 +21,7 @@ const ctx = canvas.getContext("2d");
 const width = canvas.width;
 const height = canvas.height;
 
+// Geluidseffecten
 const sndGoal = new Audio('sounds/sndGoal.wav');
 const sndPaddle = new Audio('sounds/sndPaddle.wav');
 const sndWall = new Audio('sounds/sndWall.wav');
@@ -32,6 +33,9 @@ function playSound(audio) {
   audio.play().catch(e => console.log('Sound play error:', e));
 }
 
+// -----------------------------------------------------------------------------
+// Splitsen / multi-bal hulpfuncties
+// -----------------------------------------------------------------------------
 
 const paddleWidth = 10;
 const paddleHeight = 80;
@@ -60,7 +64,7 @@ function resetSplitState() {
   nextThreshold = 2; 
 }
 
-
+// Maak extra ballen tot `targetCount`. Nieuwe ballen erven positie en krijgen gevarieerde hoeken.
 
 function splitBallsToCount(targetCount) {
   if (balls.length >= targetCount) return;
@@ -91,7 +95,7 @@ function checkSplit() {
 }
 
 // -----------------------------------------------------------------------------
-// Ball factory and speed helpers
+// Bal-fabriek en snelheidshulpfuncties
 // -----------------------------------------------------------------------------
 
 function makeBall(direction) {
@@ -195,7 +199,7 @@ function triggerGoalEffect(scoringSide) {
 function setMode(mode) {
   if (!MODE_ORDER.includes(mode)) return;
   gameMode = mode;
-  // when switching to AI mode, reset AI skill progression and show controls
+  // bij overschakelen naar AI-modus: reset AI-vaardigheidsprogressie en toon bedieningselementen
   if (gameMode === MODE_COOP_AI) {
     aiSkillLevel = 0;
     aiSkillSeconds = 0;
@@ -206,8 +210,8 @@ function setMode(mode) {
   resetGame();
 }
 
-// Update the on-screen mode label based on current `gameMode`.
-// This keeps the player informed which ruleset is active.
+// Werk het moduslabel op het scherm bij op basis van de huidige `gameMode`.
+// Dit houdt de speler op de hoogte welke regels actief zijn.
 
 function updateModeText() {
   if (!modeEl) return;
@@ -255,12 +259,14 @@ function handleInput() {
     leftY = clamp(leftY, 0, height - paddleHeight);
     leftY2 = clamp(leftY2, 0, height - paddleHeight);
 
-
+    // Bereken het AI-gedrag op basis van gekozen moeilijkheid en huidige vaardigheidsprogressie.
+    // `effectiveSpeed` bepaalt hoeveel pixels de AI-paddle per update beweegt.
+    // `effectiveError` voegt een willekeurige afwijking toe zodat de AI soms mist.
     const cfg = DIFFICULTY_CONFIG[aiDifficulty] || DIFFICULTY_CONFIG.medium;
     const effectiveSpeed = cfg.baseSpeed + aiSkillLevel * AI_SPEED_PER_SKILL;
     const effectiveError = Math.max(0, cfg.baseError - aiSkillLevel * AI_ERROR_REDUCTION_PER_SKILL);
 
-
+    // Richt op het midden van de eerste bal (indien aanwezig). Voeg willekeurige fout toe om imperfectie te simuleren.
     const targetBallY = (balls.length > 0) ? (balls[0].y + balls[0].size / 2) : (height / 2);
     const aiTarget = targetBallY - paddleHeight / 2 + (Math.random() * 2 - 1) * effectiveError;
     if (aiTarget > rightY) rightY += effectiveSpeed;
@@ -275,11 +281,11 @@ function moveBall() {
     b.x += b.sx;
     b.y += b.sy;
 
-  
+    // Terugkaatsen van boven- en ondermuren
     if (b.y <= 0) {
       b.y = 0;
       b.sy = -b.sy;
-      playSound(sndWall); 
+      playSound(sndWall); // geluid bij muur
       increaseBallSpeed(b);
     }
     if (b.y + b.size >= height) {
@@ -298,7 +304,7 @@ function moveBall() {
           const overlapTop = (b.y + b.size) - obs.y;
           const overlapBottom = (obs.y + obs.h) - b.y;
           const minOverlap = Math.min(overlapLeft, overlapRight, overlapTop, overlapBottom);
-          // Determine collision side by minimal overlap and reflect accordingly
+          // Bepaal aanraakzijde door minimale overlap en reflecteer dienovereenkomstig
           if (minOverlap === overlapLeft) {
             b.x = obs.x - b.size;
             b.sx = -Math.abs(b.sx);
@@ -312,7 +318,7 @@ function moveBall() {
             b.y = obs.y + obs.h;
             b.sy = Math.abs(b.sy);
           }
-          // treat obstacle bounce similar to paddle/wall: increase speed and count bounce
+          // Behandel obstakelbotsing vergelijkbaar met paddle/muur: verhoog snelheid en tel de botsing
           increaseBallSpeed(b);
           totalBounces++;
           checkSplit();
@@ -392,7 +398,7 @@ function resetGame() {
     leftY = (height - paddleHeight) / 2;
     rightY = (height - paddleHeight) / 2;
     leftY2 = (height - paddleHeight) / 2;
-    // reset obstacles: initial placement for Obstacles mode
+    // Reset obstakels: initiële plaatsing voor Obstakels-modus
     obstacles = [];
     if (gameMode === MODE_OBSTACLES) {
       const xs = [width * 0.36, width * 0.5, width * 0.64];
@@ -435,7 +441,7 @@ function repositionObstacles() {
   }
 }
 
-// Toggle mute with button text update. Keeps audio control centralized.
+// Schakel mute met bijwerken van de knoptekst. Houdt audio-controle gecentraliseerd.
 
 function togglePause() {
   if (gameOver) return; 
@@ -492,7 +498,7 @@ function draw() {
   }
 
 
-  // Draw background
+  // Achtergrond tekenen
   if (useBackgroundImage && bgImage.complete) {
     ctx.drawImage(bgImage, 0, 0, width, height);
   } else {
@@ -503,7 +509,7 @@ function draw() {
   ctx.fillStyle = "#fff";
 
   ctx.fillRect(width / 2 - 1, 0, 2, height);
-  // Draw obstacles (if any)
+  // Obstakels tekenen (indien aanwezig)
   if (obstacles && obstacles.length > 0) {
     ctx.fillStyle = "#999";
     for (const o of obstacles) {
@@ -511,14 +517,24 @@ function draw() {
     }
   }
 
-  ctx.fillStyle = "#fff";
-  ctx.fillRect(leftX, leftY, paddleWidth, paddleHeight);
+  // Paddles tekenen. In Coop AI-modus worden verschillende kleuren gebruikt voor duidelijkheid.
   if (gameMode === MODE_COOP_AI) {
+    ctx.fillStyle = '#66ccff';
+    ctx.fillRect(leftX, leftY, paddleWidth, paddleHeight);
+    ctx.fillStyle = '#66ff99';
     ctx.fillRect(leftX, leftY2, paddleWidth, paddleHeight);
+    ctx.fillStyle = '#ff6666';
+    ctx.fillRect(rightX, rightY, paddleWidth, paddleHeight);
+  } else {
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(leftX, leftY, paddleWidth, paddleHeight);
+    if (gameMode === MODE_COOP_AI) {
+      ctx.fillRect(leftX, leftY2, paddleWidth, paddleHeight);
+    }
+    ctx.fillRect(rightX, rightY, paddleWidth, paddleHeight);
   }
-  ctx.fillRect(rightX, rightY, paddleWidth, paddleHeight);
 
-  // Draw balls
+  // Ballen tekenen
   for (const b of balls) {
     if (useBackgroundImage && ballImage.complete) {
       ctx.drawImage(ballImage, b.x, b.y, b.size, b.size);
@@ -526,6 +542,9 @@ function draw() {
       ctx.fillRect(b.x, b.y, b.size, b.size);
     }
   }
+
+  // Herstel tekstkleur voor UI-elementen (score, timer, meldingen)
+  ctx.fillStyle = "#fff";
 
   ctx.font = "20px Arial";
   ctx.textAlign = "center";
@@ -560,9 +579,9 @@ function draw() {
     ctx.fillText('Druk op Opnieuw om opnieuw te spelen', width / 2, height / 2 + 20);
   }
 
-    // --- GOAL FLASH + TEXT overlay ---
+    // --- DOEL FLITS + TEKST overlay ---
   if (goalEffectTimer > 0) {
-    const t = goalEffectTimer / goalEffectMax; // 1 -> 0
+    const t = goalEffectTimer / goalEffectMax; // 1 -> 0 (begin -> einde)
     ctx.fillStyle = `rgba(255,255,255,${goalFlashAlpha * t})`;
     ctx.fillRect(0, 0, width, height);
 
@@ -660,7 +679,7 @@ function createAiDifficultyUI() {
       aiDifficulty = d;
       aiSkillLevel = 0;
       aiSkillSeconds = 0;
-      // update active style
+      // actieve stijl bijwerken
       const all = container.querySelectorAll('.ai-difficulty-btn');
       all.forEach(x => x.style.opacity = x === btn ? '1' : '0.7');
     });

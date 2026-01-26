@@ -1,7 +1,7 @@
 /*
   styles.css
-  Purpose: Basic styling for Simple Pong demo.
-  Notes: Buttons use the `.button` class. Adjust colors here for theme changes.
+  Doel: Basisstyling voor de Simple Pong-demo.
+  Aantekeningen: Knoppen gebruiken de `.button`-klasse. Pas kleuren hier aan voor themawijzigingen.
 */
 
 * { box-sizing: border-box; }
@@ -47,4 +47,16 @@ h1 {
 
 .button:hover {
   background-color: #e0e0e0;
+}
+
+#Instructies {
+  list-style-type: none;
+  padding: 0;
+  margin-top: 20px;
+  font-size: 16px;
+  color: #fff;
+}
+
+li::marker {
+  color: #000;
 }
